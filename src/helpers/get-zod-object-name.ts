@@ -15,6 +15,8 @@ import {
   ZodPipe,
   ZodRecord,
   ZodString,
+  ZodStringFormat,
+  ZodTransform,
   ZodType,
   ZodUnion,
 } from 'zod'
@@ -43,7 +45,10 @@ export function getZodObjectName(instance: ZodType): string {
   }
 
   if (isZodInstance(ZodPipe, instance)) {
-    return getZodObjectName(instance._def.in as ZodType)
+    const target = isZodInstance(ZodTransform, instance._def.out as ZodType)
+      ? instance._def.in
+      : instance._def.out
+    return getZodObjectName(target as ZodType)
   }
 
   if (isZodInstance(ZodDefault, instance)) {
@@ -118,6 +123,10 @@ export function getZodObjectName(instance: ZodType): string {
 
   if (isZodInstance(ZodBoolean, instance)) return 'Boolean'
   if (isZodInstance(ZodString, instance)) return 'String'
+  // Zod v4 string-format types (uuid, email, url, base64, cuid, cuid2,
+  // ulid, nanoid, jwt, ipv4/v6, cidrv4/v6, iso.date/time/datetime/duration,
+  // emoji, e164, ksuid, mac, xid, base64url, guid) all map to GraphQL String.
+  if (isZodInstance(ZodStringFormat, instance)) return 'String'
   if (isZodInstance(ZodNumber, instance)) return 'Number'
   if (isZodInstance(ZodBigInt, instance)) return 'BigInt'
   if (isZodInstance(ZodDate, instance)) return 'Date'

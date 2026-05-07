@@ -97,6 +97,79 @@ describe('getFieldInfoFromZod', () => {
       const info = getFieldInfoFromZod('name', schema, defaultOptions)
       expect(info.type).toBe(String)
     })
+
+    it('should follow ZodPipe to its output when out is not a transform', () => {
+      // z.string().pipe(z.number()) is a pipe whose final type is the number on the right.
+      const schema = z.string().pipe(z.number())
+      const info = getFieldInfoFromZod('count', schema, defaultOptions)
+      expect(info.type).toBe(Number)
+    })
+  })
+
+  describe('zod v4 string formats', () => {
+    // In Zod v4, z.uuid()/z.email()/etc. are no longer ZodString — they are
+    // their own classes (ZodUUID, ZodEmail...) that share ZodStringFormat as
+    // a common base. They should still map to GraphQL's String type.
+    const cases: Array<[string, () => any]> = [
+      ['uuid', () => z.uuid()],
+      ['email', () => z.email()],
+      ['url', () => z.url()],
+      ['cuid', () => z.cuid()],
+      ['cuid2', () => z.cuid2()],
+      ['ulid', () => z.ulid()],
+      ['nanoid', () => z.nanoid()],
+      ['base64', () => z.base64()],
+      ['ipv4', () => z.ipv4()],
+      ['ipv6', () => z.ipv6()],
+      ['jwt', () => z.jwt()],
+      ['emoji', () => z.emoji()],
+      ['iso.date', () => z.iso.date()],
+      ['iso.datetime', () => z.iso.datetime()],
+    ]
+
+    for (const [name, build] of cases) {
+      it(`should treat z.${name}() as String`, () => {
+        const info = getFieldInfoFromZod('field', build(), defaultOptions)
+        expect(info.type).toBe(String)
+        expect(info.isOptional).toBe(false)
+        expect(info.isNullable).toBe(false)
+      })
+    }
+
+    it('should preserve optional through string-format types', () => {
+      const info = getFieldInfoFromZod('field', z.email().optional(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isOptional).toBe(true)
+    })
+
+    it('should preserve nullable through string-format types', () => {
+      const info = getFieldInfoFromZod('field', z.uuid().nullable(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isNullable).toBe(true)
+    })
+
+    it('should handle arrays of string-format types', () => {
+      const info = getFieldInfoFromZod('ids', z.array(z.uuid()), defaultOptions)
+      expect(info.isOfArray).toBe(true)
+      expect(info.type[0]).toBe(String)
+    })
+  })
+
+  describe('zod v4 number formats', () => {
+    it('should detect z.int() as Int', () => {
+      const info = getFieldInfoFromZod('count', z.int(), defaultOptions)
+      expect(info.type).toBe(Int)
+    })
+
+    it('should detect z.int32() as Int', () => {
+      const info = getFieldInfoFromZod('count', z.int32(), defaultOptions)
+      expect(info.type).toBe(Int)
+    })
+
+    it('should keep z.float32() as Number', () => {
+      const info = getFieldInfoFromZod('value', z.float32(), defaultOptions)
+      expect(info.type).toBe(Number)
+    })
   })
 
   describe('canParse', () => {
@@ -110,6 +183,13 @@ describe('getFieldInfoFromZod', () => {
       expect(getFieldInfoFromZod.canParse(z.string().nullable())).toBe(true)
       expect(getFieldInfoFromZod.canParse(z.string().default('x'))).toBe(true)
       expect(getFieldInfoFromZod.canParse(z.enum(['a', 'b']))).toBe(true)
+    })
+
+    it('should return true for zod v4 string-format types', () => {
+      expect(getFieldInfoFromZod.canParse(z.uuid())).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.email())).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.url())).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.iso.datetime())).toBe(true)
     })
 
     it('should return false for unsupported types', () => {

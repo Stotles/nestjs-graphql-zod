@@ -93,6 +93,41 @@ describe('getZodObjectName', () => {
     expect(name).toBe('String')
   })
 
+  it('should follow non-transform pipes to their output', () => {
+    // For a true pipe (no transform), the actual data type is the right side.
+    const name = getZodObjectName(z.string().pipe(z.number()))
+    expect(name).toBe('Number')
+  })
+
+  describe('zod v4 string-format types', () => {
+    const cases: Array<[string, () => any]> = [
+      ['uuid', () => z.uuid()],
+      ['email', () => z.email()],
+      ['url', () => z.url()],
+      ['cuid', () => z.cuid()],
+      ['cuid2', () => z.cuid2()],
+      ['ulid', () => z.ulid()],
+      ['nanoid', () => z.nanoid()],
+      ['base64', () => z.base64()],
+      ['ipv4', () => z.ipv4()],
+      ['iso.datetime', () => z.iso.datetime()],
+    ]
+
+    for (const [name, build] of cases) {
+      it(`should return "String" for z.${name}()`, () => {
+        expect(getZodObjectName(build())).toBe('String')
+      })
+    }
+
+    it('should return "Optional<String>" for an optional string-format type', () => {
+      expect(getZodObjectName(z.email().optional())).toBe('Optional<String>')
+    })
+
+    it('should return "Array<String>" for an array of string-format types', () => {
+      expect(getZodObjectName(z.array(z.uuid()))).toBe('Array<String>')
+    })
+  })
+
   it('should return "Unknown" for unrecognized types', () => {
     expect(getZodObjectName(z.unknown())).toBe('Unknown')
   })
