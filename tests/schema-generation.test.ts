@@ -3,6 +3,7 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { z } from 'zod'
 
 import {
+  Args,
   GraphQLSchemaBuilderModule,
   GraphQLSchemaFactory,
   Resolver,
@@ -25,11 +26,11 @@ import {
   inputFromZod,
   MutationWithZod,
   QueryWithZod,
+  ZodArgs,
 } from '../src'
 
 // All schemas used by the resolvers below. Defined once so each generated
-// model class is created once and the factory can register them as orphan
-// types if needed.
+// model class is created once.
 const TaskStatus = z
   .enum(['active', 'completed', 'archived'])
   .describe('TaskStatus: lifecycle of a task')
@@ -48,6 +49,15 @@ const TaskInput = z.object({
   description: z.string().optional(),
   status: TaskStatus,
 })
+
+// Flat filter used as a parameter argument. ZodArgs registers its input
+// schema via inputFromZod, which today doesn't recurse into nested
+// ZodObjects (those would need their own @InputType registration), so the
+// schemas exposed via @ZodArgs are kept primitive on purpose.
+const UserFilter = z.object({
+  search: z.string().optional(),
+  minAge: z.number().int().optional(),
+}).describe('UserFilter: filter parameters for the user query')
 
 const Profile = z.object({
   email: z.email(),
@@ -87,11 +97,9 @@ class TaskResolver {
   }
 
   @MutationWithZod(Task)
-  createTask() {
-    // Parameter decorators (@Args(..., { type: () => TaskInputModel })) need
-    // emitDecoratorMetadata which vitest's transformer doesn't honour. We
-    // instead pass TaskInputModel as an orphaned type below so it still ends
-    // up in the schema and we can assert against it.
+  createTask(
+    @Args('input', { type: () => TaskInputModel }) _input: unknown,
+  ) {
     return {
       id: '2',
       title: 'created',
@@ -106,7 +114,9 @@ class TaskResolver {
 @Resolver(() => UserModel)
 class UserResolver {
   @QueryWithZod(User)
-  user() {
+  user(
+    @ZodArgs(UserFilter) _filter: ZodArgs.Of<typeof UserFilter>,
+  ) {
     return {
       id: '00000000-0000-0000-0000-000000000000',
       name: 'Alice',
@@ -120,7 +130,7 @@ class UserResolver {
 
 let schema: GraphQLSchema
 let sdl: string
-// Mirror the consumer's schema-generation script: lexicographicSortSchema +
+// Mirror a typical schema-generation script: lexicographicSortSchema +
 // printSchema. Sorting gives a deterministic SDL ordering so we can pin it
 // down with an inline snapshot.
 let sortedSdl: string
@@ -131,9 +141,7 @@ beforeAll(async () => {
     abortOnError: false,
   })
   const factory = app.get(GraphQLSchemaFactory)
-  schema = await factory.create([TaskResolver, UserResolver], {
-    orphanedTypes: [TaskInputModel],
-  })
+  schema = await factory.create([TaskResolver, UserResolver])
   sdl = printSchema(schema)
   sortedSdl = printSchema(lexicographicSortSchema(schema))
   await app.close()
@@ -271,12 +279,11 @@ describe('GraphQL schema generation', () => {
       expect(sdl).toMatch(/input TaskInput\s*{[^}]*title: String!/)
     })
 
-    it('should produce the same SDL as the consumer schema-generation script', () => {
-      // Mirror a consumer's typical schema-generation script: sort the schema
-      // with lexicographicSortSchema before printing so the output is stable
-      // across runs (queries/fields/types are alphabetised). If we ever
-      // regress how Task / User / TaskInput / the enum get materialised,
-      // this snapshot fails loudly with a diff.
+    it('should produce the expected sorted SDL', () => {
+      // Sort the schema with lexicographicSortSchema before printing so the
+      // output is stable across runs (queries/fields/types are alphabetised).
+      // If we ever regress how Task / User / TaskInput / the enum get
+      // materialised, this snapshot fails loudly with a diff.
       expect(sortedSdl).toMatchInlineSnapshot(`
         """"TaskStatus: lifecycle of a task"""
         enum ClassFromZod_1_StatusEnum_1 {
@@ -286,13 +293,13 @@ describe('GraphQL schema generation', () => {
         }
 
         type Mutation {
-          createTask: Task!
+          createTask(input: TaskInput!): Task!
         }
 
         type Query {
           task: Task!
           taskList: Task!
-          user: User!
+          user(arg_0: UserFilter!): User!
         }
 
         """Task: a unit of work"""
@@ -325,6 +332,12 @@ describe('GraphQL schema generation', () => {
           """Profile: external identifiers for a user"""
           profile: User_Profile!
           tags: [String!]!
+        }
+
+        """filter parameters for the user query"""
+        input UserFilter {
+          minAge: Int
+          search: String
         }
 
         """Profile: external identifiers for a user"""
