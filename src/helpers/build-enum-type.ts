@@ -23,7 +23,7 @@ import type { IModelFromZodOptions } from '../model-from-zod'
  * @return {object} The enum object.
  */
 export function buildEnumType<T extends ZodObject>(
-  key: keyof import('zod').output<T>,
+  key: string | keyof import('zod').output<T>,
   typeInfo: ZodTypeInfo,
   options: IModelFromZodOptions<T>
 ): object {

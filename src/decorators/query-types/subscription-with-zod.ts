@@ -112,10 +112,10 @@ export function SubscriptionWithZod<T extends ZodObject>(
           .then(output => input.parseAsync(output))
           .then(output => plainToInstance(model, output))
           .catch((error: ZodError) => {
-            const messages = error.issues.reduce((prev: any, curr: any) => {
+            const messages = error.issues.reduce<Record<string, string>>((prev, curr) => {
               prev[ curr.path.join('.') ] = curr.message
               return prev
-            }, {} as any)
+            }, {})
 
             return new BadRequestException(messages)
           })
@@ -126,10 +126,10 @@ export function SubscriptionWithZod<T extends ZodObject>(
           return plainToInstance(model, parseResult.data)
         }
         else {
-          const messages = parseResult.error.issues.reduce((prev: any, curr: any) => {
+          const messages = parseResult.error.issues.reduce<Record<string, string>>((prev, curr) => {
             prev[ curr.path.join('.') ] = curr.message
             return prev
-          }, {} as any)
+          }, {})
 
           return new BadRequestException(messages)
         }
@@ -144,7 +144,8 @@ export function SubscriptionWithZod<T extends ZodObject>(
 
     if (typeof nameOrOptions === 'string') {
       if (typeof pickedOptions === 'object') {
-        decorate = Subscription(nameOrOptions, pickedOptions as any)
+        const { zod: _zod, ...subscriptionOptions } = pickedOptions
+        decorate = Subscription(nameOrOptions, subscriptionOptions)
       }
       else {
         decorate = Subscription(nameOrOptions)

@@ -84,7 +84,7 @@ export interface IModelFromZodOptions<T extends ZodType>
     key: K,
     newValue: output<T>[ K ],
     oldValue: output<T>[ K ] | undefined,
-    error: ZodError<output<T>[ K ]>
+    error: ZodError
   ): output<T>[ keyof output<T> ] | void
 
   /**

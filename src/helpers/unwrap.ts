@@ -78,7 +78,7 @@ export function unwrapNestedZod<T extends ZodType>(input: T): UnwrapNestedZod<T>
   if (isZodInstance(ZodDefault, input)) return input._def.innerType as UnwrapNestedZod<T>
   if (isZodInstance(ZodPipe, input)) return input._def.in as UnwrapNestedZod<T>
   if (isZodInstance(ZodTransform, input)) return input as unknown as UnwrapNestedZod<T>
-  if (isZodInstance(ZodLazy, input)) return (input._def as any).getter() as UnwrapNestedZod<T>
+  if (isZodInstance(ZodLazy, input)) return input._def.getter() as UnwrapNestedZod<T>
   if (isZodInstance(ZodNullable, input)) return input.unwrap() as UnwrapNestedZod<T>
   if (isZodInstance(ZodOptional, input)) return input.unwrap() as UnwrapNestedZod<T>
   if (isZodInstance(ZodPromise, input)) return input.unwrap() as UnwrapNestedZod<T>

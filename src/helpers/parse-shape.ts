@@ -132,7 +132,7 @@ function parseSingleShape<T extends ZodType>(key: string, input: T, options: Par
   const { isEnum } = elementType
 
   if (isEnum) {
-    buildEnumType(key as any, elementType, options as any)
+    buildEnumType(key, elementType, options)
   }
 
   const { type: fieldType } = elementType
@@ -174,7 +174,7 @@ function parseSingleShape<T extends ZodType>(key: string, input: T, options: Par
  */
 function buildPropertyDescriptor(key: string, input: ZodType, options: ParseOptions<ZodType>): PropertyDescriptor {
   if (getFieldInfoFromZod.canParse(input)) {
-    return createZodPropertyDescriptor(key as any, input, options)
+    return createZodPropertyDescriptor(key, input, options)
   }
 
   const { getScalarTypeFor = getDefaultTypeProvider() } = options
@@ -184,7 +184,7 @@ function buildPropertyDescriptor(key: string, input: ZodType, options: ParseOpti
     const scalarType = getScalarTypeFor(name)
 
     if (typeof scalarType === 'object') {
-      return createZodPropertyDescriptor(key as any, input, options)
+      return createZodPropertyDescriptor(key, input, options)
     }
   }
 
