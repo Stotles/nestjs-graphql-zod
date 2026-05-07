@@ -2,13 +2,18 @@ import { GraphQLScalarType } from 'graphql/type/definition'
 import {
   ZodArray,
   ZodBoolean,
+  ZodCatch,
   ZodDefault,
   ZodEnum,
+  ZodLazy,
+  ZodNonOptional,
   ZodNullable,
   ZodNumber,
   ZodObject,
   ZodOptional,
   ZodPipe,
+  ZodPrefault,
+  ZodReadonly,
   ZodString,
   ZodStringFormat,
   ZodTransform,
@@ -249,8 +254,20 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isEnum: true,
     }
   }
-  else if (isZodInstance(ZodDefault, prop)) {
+  else if (
+    isZodInstance(ZodDefault, prop)
+    || isZodInstance(ZodPrefault, prop)
+    || isZodInstance(ZodCatch, prop)
+    || isZodInstance(ZodReadonly, prop)
+  ) {
     return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+  }
+  else if (isZodInstance(ZodLazy, prop)) {
+    return getFieldInfoFromZod(key, prop._def.getter() as ZodType, options)
+  }
+  else if (isZodInstance(ZodNonOptional, prop)) {
+    const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+    return { ...inner, isOptional: false }
   }
   else if (isZodInstance(ZodPipe, prop)) {
     const target = isZodInstance(ZodTransform, prop._def.out)
@@ -301,13 +318,18 @@ export module getFieldInfoFromZod {
   export const PARSED_TYPES = [
     ZodArray,
     ZodBoolean,
+    ZodCatch,
     ZodDefault,
     ZodEnum,
+    ZodLazy,
+    ZodNonOptional,
     ZodNullable,
     ZodNumber,
     ZodObject,
     ZodOptional,
     ZodPipe,
+    ZodPrefault,
+    ZodReadonly,
     ZodString,
     ZodStringFormat,
   ] as const

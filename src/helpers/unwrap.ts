@@ -25,10 +25,10 @@ import { isZodInstance } from './is-zod-instance'
  * - {@link ZodLazy}
  * - {@link ZodNullable}
  * - {@link ZodOptional}
- * - {@link ZodPipe}
+ * - {@link ZodPipe} (unwraps to the input side)
  * - {@link ZodPromise}
  * - {@link ZodSet}
- * - {@link ZodTransform}
+ * - {@link ZodTransform} (no inner type — returns T)
  *
  * @template T The zod type.
  */
@@ -40,7 +40,9 @@ export type UnwrapNestedZod<T extends ZodType>
           T extends ZodCatch<infer I> ? I : (
             T extends ZodPromise<infer I> ? I : (
               T extends ZodSet<infer I> ? I : (
-                T extends ZodLazy<infer I> ? I : T
+                T extends ZodLazy<infer I> ? I : (
+                  T extends ZodPipe<infer I, any> ? I : T
+                )
               )
             )
           )

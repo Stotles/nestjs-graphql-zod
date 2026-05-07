@@ -1,10 +1,11 @@
 import 'reflect-metadata'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, expectTypeOf } from 'vitest'
 import { z } from 'zod'
 import {
   unwrapNestedZod,
   unwrapNestedZodRecursively,
   iterateZodLayers,
+  type UnwrapNestedZod,
 } from '../../src/helpers/unwrap'
 import { isZodInstance } from '../../src/helpers/is-zod-instance'
 
@@ -86,6 +87,25 @@ describe('unwrapNestedZodRecursively', () => {
   it('should handle already-unwrapped types', () => {
     const str = z.string()
     expect(unwrapNestedZodRecursively(str)).toBe(str)
+  })
+})
+
+describe('UnwrapNestedZod (type)', () => {
+  it('should statically extract the input side of a ZodPipe', () => {
+    type Pipe = ReturnType<typeof z.string>['pipe'] extends (next: infer N) => infer R
+      ? R
+      : never
+
+    // Walk the pipe at the type level: UnwrapNestedZod<ZodPipe<A, B>> should be A
+    const pipe = z.string().pipe(z.number())
+    type Unwrapped = UnwrapNestedZod<typeof pipe>
+    expectTypeOf<Unwrapped>().toMatchTypeOf<z.ZodString>()
+  })
+
+  it('should statically extract the input side of a transform pipe', () => {
+    const wrapped = z.string().transform((v) => v.length)
+    type Unwrapped = UnwrapNestedZod<typeof wrapped>
+    expectTypeOf<Unwrapped>().toMatchTypeOf<z.ZodString>()
   })
 })
 

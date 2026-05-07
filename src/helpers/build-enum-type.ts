@@ -32,12 +32,17 @@ export function buildEnumType<T extends ZodObject>(
 
   if (isZodInstance(ZodEnum, type)) {
     const Enum = type.enum
+    // Zod v4 unified z.nativeEnum into z.enum, but TS numeric enums still
+    // produce a values array containing numbers (and the input object keeps
+    // its reverse mappings). Detect that shape so callers can treat them
+    // like the old ZodNativeEnum.
+    const isNative = Object.values(Enum).some(v => typeof v === 'number')
 
     let enumProvider = options.getEnumType ?? getDefaultEnumProvider()
 
     if (typeof enumProvider === 'function') {
       const replacement = enumProvider(Enum, {
-        isNative: false,
+        isNative,
         name: String(key),
         parentName: options.name,
         description: type.description,
@@ -48,9 +53,14 @@ export function buildEnumType<T extends ZodObject>(
       }
     }
 
-    const incompatibleKey = getFirstIncompatibleEnumKey(Enum)
-    if (incompatibleKey) {
-      throw new Error(`The value of the Key("${incompatibleKey}") of ${options.name}.${String(key)} Enum was not valid`)
+    if (!isNative) {
+      // The string-key validator only applies to plain string enums; native
+      // numeric enums legitimately have numeric values and digit-string
+      // reverse-mapping keys, both of which registerEnumType handles.
+      const incompatibleKey = getFirstIncompatibleEnumKey(Enum)
+      if (incompatibleKey) {
+        throw new Error(`The value of the Key("${incompatibleKey}") of ${options.name}.${String(key)} Enum was not valid`)
+      }
     }
 
     const parentName = options.name

@@ -155,6 +155,48 @@ describe('getFieldInfoFromZod', () => {
     })
   })
 
+  describe('zod v4 wrappers', () => {
+    it('should unwrap ZodReadonly', () => {
+      const info = getFieldInfoFromZod('name', z.string().readonly(), defaultOptions)
+      expect(info.type).toBe(String)
+    })
+
+    it('should unwrap ZodCatch', () => {
+      const info = getFieldInfoFromZod('name', z.string().catch('fallback'), defaultOptions)
+      expect(info.type).toBe(String)
+    })
+
+    it('should unwrap ZodPrefault', () => {
+      const info = getFieldInfoFromZod('name', z.string().prefault('hi'), defaultOptions)
+      expect(info.type).toBe(String)
+    })
+
+    it('should unwrap ZodLazy', () => {
+      const info = getFieldInfoFromZod('name', z.lazy(() => z.string()), defaultOptions)
+      expect(info.type).toBe(String)
+    })
+
+    it('should unwrap ZodNonOptional and clear isOptional', () => {
+      const info = getFieldInfoFromZod('name', z.string().optional().nonoptional(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isOptional).toBe(false)
+    })
+
+    it('should follow Optional through ZodReadonly', () => {
+      const info = getFieldInfoFromZod('name', z.string().readonly().optional(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isOptional).toBe(true)
+    })
+
+    it('canParse should accept the new wrappers', () => {
+      expect(getFieldInfoFromZod.canParse(z.string().readonly())).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.string().catch('x'))).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.string().prefault('x'))).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.lazy(() => z.string()))).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.string().optional().nonoptional())).toBe(true)
+    })
+  })
+
   describe('zod v4 number formats', () => {
     it('should detect z.int() as Int', () => {
       const info = getFieldInfoFromZod('count', z.int(), defaultOptions)

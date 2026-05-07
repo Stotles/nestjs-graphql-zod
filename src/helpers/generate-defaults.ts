@@ -1,4 +1,4 @@
-import { ZodDefault, ZodObject, ZodType } from 'zod'
+import { ZodDefault, ZodObject, ZodPrefault, ZodType } from 'zod'
 
 import { isZodInstance } from './is-zod-instance'
 
@@ -32,7 +32,7 @@ export function generateDefaults<T extends ZodType>(input: T) {
   if (isZodInstance(ZodObject, input)) {
     return generateDefaultsForObject(input as ZodObject)
   }
-  else if (isZodInstance(ZodDefault, input)) {
+  else if (isZodInstance(ZodDefault, input) || isZodInstance(ZodPrefault, input)) {
     return input._def.defaultValue
   }
 }

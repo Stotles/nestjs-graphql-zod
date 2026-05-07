@@ -37,4 +37,17 @@ describe('generateDefaults', () => {
     expect(generateDefaults(z.string())).toBeUndefined()
     expect(generateDefaults(z.number())).toBeUndefined()
   })
+
+  it('should return prefault value for ZodPrefault', () => {
+    const schema = z.string().prefault('hello')
+    expect(generateDefaults(schema)).toBe('hello')
+  })
+
+  it('should pick up ZodPrefault inside an object shape', () => {
+    const schema = z.object({
+      label: z.string().prefault('untitled'),
+    })
+    const defaults = generateDefaults(schema) as any
+    expect(defaults).toEqual({ label: 'untitled' })
+  })
 })

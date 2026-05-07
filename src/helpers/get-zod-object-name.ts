@@ -3,16 +3,21 @@ import {
   ZodArray,
   ZodBigInt,
   ZodBoolean,
+  ZodCatch,
   ZodDate,
   ZodDefault,
   ZodEnum,
+  ZodLazy,
   ZodLiteral,
+  ZodNonOptional,
   ZodNull,
   ZodNullable,
   ZodNumber,
   ZodObject,
   ZodOptional,
   ZodPipe,
+  ZodPrefault,
+  ZodReadonly,
   ZodRecord,
   ZodString,
   ZodStringFormat,
@@ -51,8 +56,25 @@ export function getZodObjectName(instance: ZodType): string {
     return getZodObjectName(target as ZodType)
   }
 
-  if (isZodInstance(ZodDefault, instance)) {
+  if (
+    isZodInstance(ZodDefault, instance)
+    || isZodInstance(ZodPrefault, instance)
+    || isZodInstance(ZodCatch, instance)
+    || isZodInstance(ZodReadonly, instance)
+  ) {
     return getZodObjectName(instance._def.innerType as ZodType)
+  }
+
+  if (isZodInstance(ZodNonOptional, instance)) {
+    // .nonoptional() always wraps an optional, so peel two layers to reach
+    // the underlying type rather than reporting "Optional<...>".
+    const inner = instance._def.innerType
+    const target = isZodInstance(ZodOptional, inner) ? inner.unwrap() : inner
+    return getZodObjectName(target as ZodType)
+  }
+
+  if (isZodInstance(ZodLazy, instance)) {
+    return getZodObjectName(instance._def.getter() as ZodType)
   }
 
   if (isZodInstance(ZodEnum, instance)) {

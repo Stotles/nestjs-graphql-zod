@@ -128,6 +128,28 @@ describe('getZodObjectName', () => {
     })
   })
 
+  describe('zod v4 wrappers', () => {
+    it('should resolve through ZodReadonly', () => {
+      expect(getZodObjectName(z.string().readonly())).toBe('String')
+    })
+
+    it('should resolve through ZodCatch', () => {
+      expect(getZodObjectName(z.string().catch('x'))).toBe('String')
+    })
+
+    it('should resolve through ZodPrefault', () => {
+      expect(getZodObjectName(z.string().prefault('x'))).toBe('String')
+    })
+
+    it('should resolve through ZodLazy', () => {
+      expect(getZodObjectName(z.lazy(() => z.number()))).toBe('Number')
+    })
+
+    it('should resolve through ZodNonOptional', () => {
+      expect(getZodObjectName(z.string().optional().nonoptional())).toBe('String')
+    })
+  })
+
   it('should return "Unknown" for unrecognized types', () => {
     expect(getZodObjectName(z.unknown())).toBe('Unknown')
   })
