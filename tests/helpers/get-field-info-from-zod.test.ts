@@ -99,8 +99,9 @@ describe('getFieldInfoFromZod', () => {
     })
 
     it('should follow ZodPipe to its output when out is not a transform', () => {
-      // z.string().pipe(z.number()) is a pipe whose final type is the number on the right.
-      const schema = z.string().pipe(z.number())
+      // string -> number coercion: the pipe's output side is the number schema,
+      // so the resolved field type should be Number.
+      const schema = z.string().transform((s) => Number(s)).pipe(z.number())
       const info = getFieldInfoFromZod('count', schema, defaultOptions)
       expect(info.type).toBe(Number)
     })

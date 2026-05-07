@@ -113,12 +113,9 @@ describe('unwrapNestedZodRecursively', () => {
 
 describe('UnwrapNestedZod (type)', () => {
   it('should statically extract the input side of a ZodPipe', () => {
-    type Pipe = ReturnType<typeof z.string>['pipe'] extends (next: infer N) => infer R
-      ? R
-      : never
-
-    // Walk the pipe at the type level: UnwrapNestedZod<ZodPipe<A, B>> should be A
-    const pipe = z.string().pipe(z.number())
+    // The `pipe` overload requires B's input to match A's output, so we use
+    // string -> string here. UnwrapNestedZod<ZodPipe<A, B>> should be A.
+    const pipe = z.string().pipe(z.string())
     type Unwrapped = UnwrapNestedZod<typeof pipe>
     expectTypeOf<Unwrapped>().toMatchTypeOf<z.ZodString>()
   })

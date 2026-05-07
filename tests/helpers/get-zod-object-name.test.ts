@@ -94,9 +94,10 @@ describe('getZodObjectName', () => {
   })
 
   it('should follow non-transform pipes to their output', () => {
-    // For a true pipe (no transform), the actual data type is the right side.
-    const name = getZodObjectName(z.string().pipe(z.number()))
-    expect(name).toBe('Number')
+    // The pipe's `out` side here is a ZodNumber (not a ZodTransform), so the
+    // resolved name should be the underlying scalar.
+    const schema = z.string().transform((s) => Number(s)).pipe(z.number())
+    expect(getZodObjectName(schema)).toBe('Number')
   })
 
   describe('zod v4 string-format types', () => {

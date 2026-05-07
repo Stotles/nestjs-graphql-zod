@@ -79,7 +79,7 @@ describe('buildEnumType', () => {
     it('should report isNative=false for string-array enums', () => {
       const schema = z.enum(['a', 'b'])
       const typeInfo = { type: schema, isOptional: false, isNullable: false, isEnum: true }
-      let observed: { isNative: boolean } | undefined
+      let observed: { isNative?: boolean } | undefined
 
       buildEnumType('status', typeInfo, {
         name: 'Model',
@@ -95,7 +95,7 @@ describe('buildEnumType', () => {
       enum Status { Active = 'active', Inactive = 'inactive' }
       const schema = z.nativeEnum(Status)
       const typeInfo = { type: schema, isOptional: false, isNullable: false, isEnum: true }
-      let observed: { isNative: boolean } | undefined
+      let observed: { isNative?: boolean } | undefined
 
       buildEnumType('status', typeInfo, {
         name: 'Model',
@@ -111,7 +111,7 @@ describe('buildEnumType', () => {
       enum Color { Red, Green, Blue }
       const schema = z.nativeEnum(Color)
       const typeInfo = { type: schema, isOptional: false, isNullable: false, isEnum: true }
-      let observed: { isNative: boolean } | undefined
+      let observed: { isNative?: boolean } | undefined
 
       buildEnumType('color', typeInfo, {
         name: 'Model',

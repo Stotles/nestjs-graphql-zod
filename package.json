@@ -5,8 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run && npm run test:types",
     "test:watch": "vitest",
+    "test:types": "tsc -p tsconfig.test.json",
     "prepublish": "tsc",
     "build": "tsc",
     "build-watch": "tsc --watch",

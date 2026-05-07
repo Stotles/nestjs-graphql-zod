@@ -49,7 +49,8 @@ describe('ZodArgs', () => {
 
 describe('ZodArgs.Of', () => {
   it('should be a type-level utility (just verify it compiles)', () => {
-    type Result = ZodArgs.Of<typeof z.ZodString>
+    const stringSchema = z.string()
+    type Result = ZodArgs.Of<typeof stringSchema>
     const _check: Result = 'hello'
     expect(_check).toBe('hello')
   })

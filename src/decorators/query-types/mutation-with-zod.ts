@@ -5,12 +5,17 @@ import { MethodWithZod } from '../common'
 import type { ZodObject } from 'zod'
 import type { IModelFromZodOptions } from '../../model-from-zod'
 
-export interface MutationOptions<T extends ZodObject> extends Omit<MO, never> {
+/**
+ * Options for {@link MutationWithZod}, mirroring `@nestjs/graphql`'s
+ * {@link MO} (a discriminated union over `nullable: true | false |
+ * NullableList`) plus the library-specific `zod` field for model creation.
+ *
+ * Expressed as a type intersection so the union is preserved and TypeScript
+ * still narrows `defaultValue` based on the `nullable` member.
+ */
+export type MutationOptions<T extends ZodObject> = MO & {
   /**
    * Options for model creation from `zod`.
-   *
-   * @type {IModelFromZodOptions<T>}
-   * @memberof QueryOptions
    */
   zod?: IModelFromZodOptions<T>
 }
