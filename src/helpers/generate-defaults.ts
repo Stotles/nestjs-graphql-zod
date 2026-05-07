@@ -1,6 +1,7 @@
 import { ZodDefault, ZodObject, ZodPrefault, ZodType } from 'zod'
 
 import { isZodInstance } from './is-zod-instance'
+import { findInnerDefault } from './unwrap'
 
 /**
  * Generates the default values for given object.
@@ -22,6 +23,10 @@ function generateDefaultsForObject(input: ZodObject) {
 /**
  * Generates the default vales for given input.
  *
+ * Walks through wrapper schemas (e.g. `ZodOptional`, `ZodNullable`,
+ * `ZodReadonly`, `ZodCatch`) so a {@link ZodDefault} or {@link ZodPrefault}
+ * nested anywhere inside still surfaces its value.
+ *
  * @export
  * @template T The type of the input.
  * @param {T} input The input.
@@ -32,7 +37,7 @@ export function generateDefaults<T extends ZodType>(input: T) {
   if (isZodInstance(ZodObject, input)) {
     return generateDefaultsForObject(input as ZodObject)
   }
-  else if (isZodInstance(ZodDefault, input) || isZodInstance(ZodPrefault, input)) {
-    return input._def.defaultValue
-  }
+
+  const defaulted = findInnerDefault(input)
+  if (defaulted) return defaulted._def.defaultValue
 }

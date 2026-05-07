@@ -64,4 +64,31 @@ describe('createZodPropertyDescriptor', () => {
 
     expect(obj.name).toBe('default_value')
   })
+
+  it('should seed the descriptor when ZodDefault is wrapped in optional()', () => {
+    const schema = z.string().default('default_value').optional()
+    const descriptor = createZodPropertyDescriptor('name', schema, {})
+    const obj = {} as any
+    Object.defineProperty(obj, 'name', descriptor)
+
+    expect(obj.name).toBe('default_value')
+  })
+
+  it('should seed the descriptor through readonly() + nullable()', () => {
+    const schema = z.string().default('default_value').readonly().nullable()
+    const descriptor = createZodPropertyDescriptor('name', schema, {})
+    const obj = {} as any
+    Object.defineProperty(obj, 'name', descriptor)
+
+    expect(obj.name).toBe('default_value')
+  })
+
+  it('should seed the descriptor from ZodPrefault wrapped in optional()', () => {
+    const schema = z.string().prefault('seed').optional()
+    const descriptor = createZodPropertyDescriptor('name', schema, {})
+    const obj = {} as any
+    Object.defineProperty(obj, 'name', descriptor)
+
+    expect(obj.name).toBe('seed')
+  })
 })

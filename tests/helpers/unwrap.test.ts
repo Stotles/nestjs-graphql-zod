@@ -2,9 +2,10 @@ import 'reflect-metadata'
 import { describe, it, expect, expectTypeOf } from 'vitest'
 import { z } from 'zod'
 import {
+  findInnerDefault,
+  iterateZodLayers,
   unwrapNestedZod,
   unwrapNestedZodRecursively,
-  iterateZodLayers,
   type UnwrapNestedZod,
 } from '../../src/helpers/unwrap'
 import { isZodInstance } from '../../src/helpers/is-zod-instance'
@@ -65,6 +66,20 @@ describe('unwrapNestedZod', () => {
     expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
   })
 
+  it('should unwrap ZodReadonly', () => {
+    const inner = z.string()
+    const wrapped = inner.readonly()
+    const unwrapped = unwrapNestedZod(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
+  it('should unwrap ZodPrefault', () => {
+    const inner = z.string()
+    const wrapped = inner.prefault('seed')
+    const unwrapped = unwrapNestedZod(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
   it('should return same value for non-wrapping types', () => {
     const str = z.string()
     expect(unwrapNestedZod(str)).toBe(str)
@@ -80,6 +95,12 @@ describe('unwrapNestedZodRecursively', () => {
 
   it('should recursively unwrap default + optional', () => {
     const wrapped = z.string().default('x').optional()
+    const unwrapped = unwrapNestedZodRecursively(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
+  it('should recursively unwrap readonly + prefault + optional', () => {
+    const wrapped = z.string().prefault('x').readonly().optional()
     const unwrapped = unwrapNestedZodRecursively(wrapped)
     expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
   })
@@ -106,6 +127,43 @@ describe('UnwrapNestedZod (type)', () => {
     const wrapped = z.string().transform((v) => v.length)
     type Unwrapped = UnwrapNestedZod<typeof wrapped>
     expectTypeOf<Unwrapped>().toMatchTypeOf<z.ZodString>()
+  })
+})
+
+describe('findInnerDefault', () => {
+  it('should find a top-level ZodDefault', () => {
+    const layer = findInnerDefault(z.string().default('hi'))
+    expect(layer).toBeDefined()
+    expect(isZodInstance(z.ZodDefault, layer!)).toBe(true)
+  })
+
+  it('should find a top-level ZodPrefault', () => {
+    const layer = findInnerDefault(z.string().prefault('hi'))
+    expect(layer).toBeDefined()
+    expect(isZodInstance(z.ZodPrefault, layer!)).toBe(true)
+  })
+
+  it('should find a default nested under ZodOptional', () => {
+    const layer = findInnerDefault(z.string().default('hi').optional())
+    expect(layer).toBeDefined()
+    expect(isZodInstance(z.ZodDefault, layer!)).toBe(true)
+  })
+
+  it('should find a default nested under ZodNullable + ZodReadonly', () => {
+    const layer = findInnerDefault(z.string().default('hi').readonly().nullable())
+    expect(layer).toBeDefined()
+    expect(isZodInstance(z.ZodDefault, layer!)).toBe(true)
+  })
+
+  it('should find a prefault nested under ZodOptional', () => {
+    const layer = findInnerDefault(z.string().prefault('hi').optional())
+    expect(layer).toBeDefined()
+    expect(isZodInstance(z.ZodPrefault, layer!)).toBe(true)
+  })
+
+  it('should return undefined when no default is present', () => {
+    expect(findInnerDefault(z.string().optional())).toBeUndefined()
+    expect(findInnerDefault(z.number())).toBeUndefined()
   })
 })
 

@@ -1,10 +1,9 @@
 import {
   output,
-  ZodDefault,
   ZodType,
 } from 'zod'
 
-import { isZodInstance } from './is-zod-instance'
+import { findInnerDefault } from './unwrap'
 
 import type { IModelFromZodOptions } from '../model-from-zod'
 
@@ -26,8 +25,12 @@ export function createZodPropertyDescriptor<T extends ZodType>(
 ): PropertyDescriptor {
   let localVariable: any
 
-  if (isZodInstance(ZodDefault, input)) {
-    localVariable = input._def.defaultValue
+  // Walk through wrappers (Optional/Nullable/Readonly/Catch/...) to find a
+  // ZodDefault or ZodPrefault anywhere inside the schema, so the seed value
+  // matches what zod's parser would produce on undefined input.
+  const defaulted = findInnerDefault(input)
+  if (defaulted) {
+    localVariable = defaulted._def.defaultValue
   }
 
   const {

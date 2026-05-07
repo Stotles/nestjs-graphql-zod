@@ -6,7 +6,9 @@ import {
   ZodNullable,
   ZodOptional,
   ZodPipe,
+  ZodPrefault,
   ZodPromise,
+  ZodReadonly,
   ZodSet,
   ZodTransform,
   ZodType,
@@ -26,7 +28,9 @@ import { isZodInstance } from './is-zod-instance'
  * - {@link ZodNullable}
  * - {@link ZodOptional}
  * - {@link ZodPipe} (unwraps to the input side)
+ * - {@link ZodPrefault}
  * - {@link ZodPromise}
+ * - {@link ZodReadonly}
  * - {@link ZodSet}
  * - {@link ZodTransform} (no inner type — returns T)
  *
@@ -36,12 +40,16 @@ export type UnwrapNestedZod<T extends ZodType>
   = T extends ZodArray<infer I> ? I : (
     T extends ZodOptional<infer I> ? I : (
       T extends ZodDefault<infer I> ? I : (
-        T extends ZodNullable<infer I> ? I : (
-          T extends ZodCatch<infer I> ? I : (
-            T extends ZodPromise<infer I> ? I : (
-              T extends ZodSet<infer I> ? I : (
-                T extends ZodLazy<infer I> ? I : (
-                  T extends ZodPipe<infer I, any> ? I : T
+        T extends ZodPrefault<infer I> ? I : (
+          T extends ZodReadonly<infer I> ? I : (
+            T extends ZodNullable<infer I> ? I : (
+              T extends ZodCatch<infer I> ? I : (
+                T extends ZodPromise<infer I> ? I : (
+                  T extends ZodSet<infer I> ? I : (
+                    T extends ZodLazy<infer I> ? I : (
+                      T extends ZodPipe<infer I, any> ? I : T
+                    )
+                  )
                 )
               )
             )
@@ -76,6 +84,8 @@ export function unwrapNestedZod<T extends ZodType>(input: T): UnwrapNestedZod<T>
   if (isZodInstance(ZodArray, input)) return input.element as UnwrapNestedZod<T>
   if (isZodInstance(ZodCatch, input)) return input._def.innerType as UnwrapNestedZod<T>
   if (isZodInstance(ZodDefault, input)) return input._def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance(ZodPrefault, input)) return input._def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance(ZodReadonly, input)) return input._def.innerType as UnwrapNestedZod<T>
   if (isZodInstance(ZodPipe, input)) return input._def.in as UnwrapNestedZod<T>
   if (isZodInstance(ZodTransform, input)) return input as unknown as UnwrapNestedZod<T>
   if (isZodInstance(ZodLazy, input)) return input._def.getter() as UnwrapNestedZod<T>
@@ -128,4 +138,23 @@ export function* iterateZodLayers<T extends ZodType>(input: T) {
   }
 
   yield current
+}
+
+/**
+ * Finds the innermost {@link ZodDefault} or {@link ZodPrefault} layer in a
+ * wrapped schema, walking through {@link ZodOptional}, {@link ZodNullable},
+ * {@link ZodReadonly}, {@link ZodCatch}, etc.
+ *
+ * @export
+ * @param {ZodType} input The zod input.
+ * @return {ZodDefault | ZodPrefault | undefined} The default-bearing layer,
+ * or `undefined` if none is found.
+ *
+ * @__PURE__
+ */
+export function findInnerDefault(input: ZodType): ZodDefault | ZodPrefault | undefined {
+  for (const layer of iterateZodLayers(input)) {
+    if (isZodInstance(ZodDefault, layer)) return layer
+    if (isZodInstance(ZodPrefault, layer)) return layer
+  }
 }
