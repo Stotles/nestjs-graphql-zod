@@ -80,6 +80,11 @@ class TaskResolver {
     }
   }
 
+  @QueryWithZod(Task, 'taskList')
+  tasks() {
+    return []
+  }
+
   @MutationWithZod(Task)
   createTask() {
     // Parameter decorators (@Args(..., { type: () => TaskInputModel })) need
@@ -222,7 +227,21 @@ describe('GraphQL schema generation', () => {
       const Query = schema.getQueryType()!
       const fields = Query.getFields()
       expect(fields).toHaveProperty('task')
+      expect(fields).toHaveProperty('taskList')
       expect(fields).toHaveProperty('user')
+    })
+
+    it('should keep the schema field name from the string-name overload', () => {
+      // QueryWithZod(Task, 'taskList') should rename `tasks` to `taskList`
+      // in the schema while still registering the Task return type.
+      const Query = schema.getQueryType()!
+      const taskList = Query.getFields().taskList
+      expect(taskList).toBeDefined()
+      // Default array nullability: the resolver returns Task array — so the
+      // field's underlying named type should be Task.
+      const fieldType = taskList.type as { ofType?: { name?: string }, name?: string }
+      const named = fieldType.ofType?.name ?? fieldType.name
+      expect(named).toBe('Task')
     })
 
     it('should expose the mutation', () => {

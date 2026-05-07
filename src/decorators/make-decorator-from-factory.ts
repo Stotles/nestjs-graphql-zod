@@ -3,7 +3,6 @@ import type {
   DynamicZodModelClass,
   GraphQLCDF,
   GraphQLMDF,
-  NameInputMethodDecoratorFactory,
   TypeOptionInputMethodDecoratorFactory,
 } from './types'
 import type {
@@ -37,8 +36,14 @@ export function makeDecoratorFromFactory<
 ) {
   let decorator: MethodDecorator | ClassDecorator | ParameterDecorator
   if (typeof nameOrOptions === 'string') {
-    const factory = decoratorFactory as NameInputMethodDecoratorFactory
-    decorator = factory(nameOrOptions)
+    // The string overload is shorthand for "rename the GraphQL field". The
+    // upstream nestjs decorators have a `Query(name)` form, but it leaves
+    // the return type unset, so the schema factory later fails with
+    // "X was defined in resolvers, but not in schema". Instead delegate to
+    // the type+options form using `name` as a partial option, which both
+    // registers the model and renames the field.
+    const factory = decoratorFactory as TypeOptionInputMethodDecoratorFactory<O>
+    decorator = factory(() => model, { name: nameOrOptions } as O)
   }
   else if (typeof nameOrOptions === 'object') {
     const { zod, ...rest } = nameOrOptions
