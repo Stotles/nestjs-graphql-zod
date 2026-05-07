@@ -174,12 +174,8 @@ export function getFieldInfoFromZod<T extends ZodType>(
     }
   }
   else if (isZodInstance(ZodNumber, prop)) {
-    const checks = prop._def.checks as any[] | undefined
-    const isInt = (prop as any).isInt === true
-      || Boolean(checks?.find((check: any) => check.isInt === true))
-
     return {
-      type: isInt ? Int : Number,
+      type: prop.isInt ? Int : Number,
       isOptional: prop.isOptional(),
       isNullable: prop.isNullable(),
     }
@@ -257,7 +253,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
     return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
   }
   else if (isZodInstance(ZodPipe, prop)) {
-    const target = isZodInstance(ZodTransform, prop._def.out as ZodType)
+    const target = isZodInstance(ZodTransform, prop._def.out)
       ? prop._def.in
       : prop._def.out
     return getFieldInfoFromZod(key, target as ZodType, options)

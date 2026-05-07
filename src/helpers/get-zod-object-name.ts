@@ -45,7 +45,7 @@ export function getZodObjectName(instance: ZodType): string {
   }
 
   if (isZodInstance(ZodPipe, instance)) {
-    const target = isZodInstance(ZodTransform, instance._def.out as ZodType)
+    const target = isZodInstance(ZodTransform, instance._def.out)
       ? instance._def.in
       : instance._def.out
     return getZodObjectName(target as ZodType)
