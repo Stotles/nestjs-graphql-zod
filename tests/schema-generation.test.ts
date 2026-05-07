@@ -15,6 +15,7 @@ import {
   GraphQLNonNull,
   GraphQLObjectType,
   GraphQLString,
+  lexicographicSortSchema,
   printSchema,
   type GraphQLSchema,
 } from 'graphql'
@@ -119,6 +120,10 @@ class UserResolver {
 
 let schema: GraphQLSchema
 let sdl: string
+// Mirror the consumer's schema-generation script: lexicographicSortSchema +
+// printSchema. Sorting gives a deterministic SDL ordering so we can pin it
+// down with an inline snapshot.
+let sortedSdl: string
 
 beforeAll(async () => {
   const app = await NestFactory.createApplicationContext(GraphQLSchemaBuilderModule, {
@@ -130,6 +135,7 @@ beforeAll(async () => {
     orphanedTypes: [TaskInputModel],
   })
   sdl = printSchema(schema)
+  sortedSdl = printSchema(lexicographicSortSchema(schema))
   await app.close()
 })
 
@@ -263,6 +269,70 @@ describe('GraphQL schema generation', () => {
 
     it('should declare the TaskInput input type', () => {
       expect(sdl).toMatch(/input TaskInput\s*{[^}]*title: String!/)
+    })
+
+    it('should produce the same SDL as the consumer schema-generation script', () => {
+      // Mirror a consumer's typical schema-generation script: sort the schema
+      // with lexicographicSortSchema before printing so the output is stable
+      // across runs (queries/fields/types are alphabetised). If we ever
+      // regress how Task / User / TaskInput / the enum get materialised,
+      // this snapshot fails loudly with a diff.
+      expect(sortedSdl).toMatchInlineSnapshot(`
+        """"TaskStatus: lifecycle of a task"""
+        enum ClassFromZod_1_StatusEnum_1 {
+          active
+          archived
+          completed
+        }
+
+        type Mutation {
+          createTask: Task!
+        }
+
+        type Query {
+          task: Task!
+          taskList: Task!
+          user: User!
+        }
+
+        """Task: a unit of work"""
+        type Task {
+          description: String
+          done: Boolean!
+          id: String!
+          priority: Int!
+
+          """TaskStatus: lifecycle of a task"""
+          status: ClassFromZod_1_StatusEnum_1!
+          title: String!
+        }
+
+        input TaskInput {
+          description: String
+
+          """TaskStatus: lifecycle of a task"""
+          status: ClassFromZod_1_StatusEnum_1!
+          title: String!
+        }
+
+        """User: an account holder"""
+        type User {
+          age: Int!
+          bio: String
+          id: String!
+          name: String!
+
+          """Profile: external identifiers for a user"""
+          profile: User_Profile!
+          tags: [String!]!
+        }
+
+        """Profile: external identifiers for a user"""
+        type User_Profile {
+          email: String!
+          homepage: String
+        }"
+      `)
     })
   })
 })
