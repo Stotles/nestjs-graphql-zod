@@ -31,14 +31,14 @@
   },
   "homepage": "https://github.com/Achder/nestjs-graphql-zod#readme",
   "peerDependencies": {
-    "@nestjs/graphql": ">= 13.0",
-    "@nestjs/core": ">= 11.0",
-    "class-transformer": ">= 0.5.1",
     "@nestjs/common": ">= 11.0",
-    "rxjs": ">= 7.5.5",
-    "zod": ">= 4.0",
+    "@nestjs/core": ">= 11.0",
+    "@nestjs/graphql": ">= 13.0",
+    "class-transformer": ">= 0.5.1",
+    "graphql": ">= 16.3.0",
     "reflect-metadata": ">= 0.1.13",
-    "graphql": ">= 16.3.0"
+    "rxjs": ">= 7.5.5",
+    "zod": ">= 4.0"
   },
   "devDependencies": {
     "@nestjs/common": "^11.0.0",
