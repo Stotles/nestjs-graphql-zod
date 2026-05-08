@@ -152,8 +152,7 @@ export function SubscriptionWithZod<T extends ZodObject>(
 
     if (typeof nameOrOptions === 'string') {
       if (typeof pickedOptions === 'object') {
-        const { zod: _zod, ...subscriptionOptions } = pickedOptions
-        decorate = Subscription(nameOrOptions, subscriptionOptions)
+        decorate = Subscription(nameOrOptions, pickedOptions)
       }
       else {
         decorate = Subscription(nameOrOptions)
