@@ -37,8 +37,8 @@ export class ZodValidatorPipe<T extends ZodType> implements PipeTransform {
 
         const targetValue = issue.path.reduce<unknown>((prev, curr) => {
           if (!isIndexable(prev)) return undefined
-          return prev[ curr as PropertyKey ]
-        }, value as unknown)
+          return prev[ curr ]
+        }, value)
 
         let children: ValidationError[] | undefined
         if (issue.path.length > 1) {
