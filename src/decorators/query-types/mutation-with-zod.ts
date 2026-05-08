@@ -16,6 +16,9 @@ import type { IModelFromZodOptions } from '../../model-from-zod'
 export type MutationOptions<T extends ZodObject> = MO & {
   /**
    * Options for model creation from `zod`.
+   *
+   * @type {IModelFromZodOptions<T>}
+   * @memberof MutationOptions
    */
   zod?: IModelFromZodOptions<T>
 }

@@ -50,4 +50,29 @@ describe('isZodInstance', () => {
     expect(isZodInstance(z.ZodNumber, z.string())).toBe(false)
     expect(isZodInstance(z.ZodObject, z.string())).toBe(false)
   })
+
+  describe('multi-copy zod fallback', () => {
+    // When a process loads two copies of zod (e.g. one CJS, one ESM), the
+    // exported classes share names but have distinct prototype chains, so
+    // an instance from copy A is not `instanceof` copy B's class. Simulate
+    // that by handing the helper an object whose constructor name matches
+    // a zod class but whose prototype chain is unrelated.
+    it('should fall back to constructor-name comparison when prototypes do not match', () => {
+      class ZodString {}
+      const fake = new ZodString()
+      expect(fake instanceof z.ZodString).toBe(false)
+      expect(isZodInstance(z.ZodString, fake)).toBe(true)
+    })
+
+    it('should still return false when neither instanceof nor names match', () => {
+      class CompletelyUnrelated {}
+      const other = new CompletelyUnrelated()
+      expect(isZodInstance(z.ZodString, other)).toBe(false)
+    })
+
+    it('should not crash on objects with a missing constructor', () => {
+      const bare = Object.create(null) as object
+      expect(isZodInstance(z.ZodString, bare)).toBe(false)
+    })
+  })
 })

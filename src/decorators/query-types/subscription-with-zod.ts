@@ -18,6 +18,9 @@ import type { ZodObject, ZodError } from 'zod'
 export type SubscriptionOptions<T extends ZodObject> = SO & {
   /**
    * Options for model creation from `zod`.
+   *
+   * @type {IModelFromZodOptions<T>}
+   * @memberof SubscriptionOptions
    */
   zod?: IModelFromZodOptions<T>
 }

@@ -2,13 +2,16 @@ import type { ZodType } from 'zod'
 import type { Type } from '@nestjs/common'
 
 /**
- * Checks whether the given `input` is an instance of the given `klass` via
- * `instanceof`.
+ * Checks whether the given `input` is an instance of the given `klass`.
  *
- * Earlier versions of this helper compared `klass.name` against
- * `input.constructor.name` to avoid issues with multiple zod copies in the
- * tree, but that broke when bundlers minified class names. With zod v4 a
- * direct `instanceof` check is reliable and narrows correctly for callers.
+ * Uses `instanceof` first (the reliable path when both sides come from the
+ * same zod module). Falls back to a constructor-name comparison so the
+ * check still succeeds when two copies of zod are loaded into one process
+ * — for example a CJS `zod/index.js` pulled in by one dependency and an
+ * ESM `zod/index.mjs` pulled in by another. The two copies expose
+ * structurally identical classes but distinct prototype chains, and a
+ * straight `instanceof` would report `false` for what is, semantically,
+ * the same type.
  *
  * @export
  * @template T The class type.
@@ -21,5 +24,6 @@ export function isZodInstance<T extends Type<ZodType>>(
   klass: T,
   input: Object
 ): input is InstanceType<T> {
-  return input instanceof klass
+  if (input instanceof klass) return true
+  return input?.constructor?.name === klass.name
 }

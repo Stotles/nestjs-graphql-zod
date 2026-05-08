@@ -16,6 +16,9 @@ import type { IModelFromZodOptions } from '../../model-from-zod'
 export type QueryOptions<T extends ZodObject> = QO & {
   /**
    * Options for model creation from `zod`.
+   *
+   * @type {IModelFromZodOptions<T>}
+   * @memberof QueryOptions
    */
   zod?: IModelFromZodOptions<T>
 }

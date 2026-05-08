@@ -8,6 +8,9 @@ import {
   ValidationError,
 } from '@nestjs/common'
 
+const isIndexable = (v: unknown): v is Record<PropertyKey, unknown> =>
+  typeof v === 'object' && v !== null
+
 /**
  * A validation pipe from `zod` validation schema.
  *
@@ -32,11 +35,10 @@ export class ZodValidatorPipe<T extends ZodType> implements PipeTransform {
       const message = error.issues.map(issue => {
         const property = issue.path[ 0 ]
 
-        const targetValue = issue.path.reduce<any>((prev, curr) => {
-          if (!prev) return
-          if (typeof prev !== 'object') return
-          return prev[ curr ]
-        }, value)
+        const targetValue = issue.path.reduce<unknown>((prev, curr) => {
+          if (!isIndexable(prev)) return undefined
+          return prev[ curr as PropertyKey ]
+        }, value as unknown)
 
         let children: ValidationError[] | undefined
         if (issue.path.length > 1) {
