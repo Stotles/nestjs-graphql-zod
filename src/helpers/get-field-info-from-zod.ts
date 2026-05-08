@@ -10,6 +10,7 @@ import {
   ZodOptional,
   ZodPipe,
   ZodString,
+  ZodStringFormat,
   ZodType,
 } from 'zod'
 
@@ -164,7 +165,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isNullable: prop.isNullable(),
     }
   }
-  if (isZodInstance(ZodString, prop)) {
+  if (isZodInstance(ZodString, prop) || isZodInstance(ZodStringFormat, prop)) {
     return {
       type: String,
       isOptional: prop.isOptional(),
@@ -307,6 +308,7 @@ export module getFieldInfoFromZod {
     ZodOptional,
     ZodPipe,
     ZodString,
+    ZodStringFormat,
   ] as const
 
   /**

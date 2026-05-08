@@ -3,6 +3,13 @@ This file contains the changes made to the package.
 
 The sections are in descending order of the change date.
 
+## [4.0.0] - Unreleased
+### Added
+- Support for `zod` v4.
+
+### Removed
+- Support for `zod` v3.
+
 ## [3.3.0] - 2023-09-28
 ### Added
 - Support for `NativeEnum`s.

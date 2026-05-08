@@ -99,6 +99,55 @@ describe('getFieldInfoFromZod', () => {
     })
   })
 
+  describe('zod v4 string formats', () => {
+    // In Zod v4, z.uuid()/z.email()/etc. are no longer ZodString — they are
+    // their own classes (ZodUUID, ZodEmail...) that share ZodStringFormat as
+    // a common base. They should still map to GraphQL's String type.
+    const cases: Array<[string, () => any]> = [
+      ['uuid', () => z.uuid()],
+      ['email', () => z.email()],
+      ['url', () => z.url()],
+      ['cuid', () => z.cuid()],
+      ['cuid2', () => z.cuid2()],
+      ['ulid', () => z.ulid()],
+      ['nanoid', () => z.nanoid()],
+      ['base64', () => z.base64()],
+      ['ipv4', () => z.ipv4()],
+      ['ipv6', () => z.ipv6()],
+      ['jwt', () => z.jwt()],
+      ['emoji', () => z.emoji()],
+      ['iso.date', () => z.iso.date()],
+      ['iso.datetime', () => z.iso.datetime()],
+    ]
+
+    for (const [name, build] of cases) {
+      it(`should treat z.${name}() as String`, () => {
+        const info = getFieldInfoFromZod('field', build(), defaultOptions)
+        expect(info.type).toBe(String)
+        expect(info.isOptional).toBe(false)
+        expect(info.isNullable).toBe(false)
+      })
+    }
+
+    it('should preserve optional through string-format types', () => {
+      const info = getFieldInfoFromZod('field', z.email().optional(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isOptional).toBe(true)
+    })
+
+    it('should preserve nullable through string-format types', () => {
+      const info = getFieldInfoFromZod('field', z.uuid().nullable(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isNullable).toBe(true)
+    })
+
+    it('should handle arrays of string-format types', () => {
+      const info = getFieldInfoFromZod('ids', z.array(z.uuid()), defaultOptions)
+      expect(info.isOfArray).toBe(true)
+      expect(info.type[0]).toBe(String)
+    })
+  })
+
   describe('canParse', () => {
     it('should return true for supported types', () => {
       expect(getFieldInfoFromZod.canParse(z.string())).toBe(true)
@@ -110,6 +159,10 @@ describe('getFieldInfoFromZod', () => {
       expect(getFieldInfoFromZod.canParse(z.string().nullable())).toBe(true)
       expect(getFieldInfoFromZod.canParse(z.string().default('x'))).toBe(true)
       expect(getFieldInfoFromZod.canParse(z.enum(['a', 'b']))).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.uuid())).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.email())).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.url())).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.iso.datetime())).toBe(true)
     })
 
     it('should return false for unsupported types', () => {

@@ -308,7 +308,7 @@ import { ZodArgs } from 'nestjs-graphql-zod'
 
 const RequestSchema = zod.object({
   username: zod.string().min(5).max(20).describe('The username of the request owner'),
-  email: zod.string().email().describe('The email of the user'),
+  email: zod.email().describe('The email of the user'),
   changes: zod.object({
     themeSelection: zod.enum([ 'light', 'dark' ]).describe('The theme type'),
     permissions: zod.object({
@@ -423,7 +423,7 @@ class ExampleResolver() {
   inlineExample(
     @ZodArgs(zod.number().gt(10).array()) numberArray: number[],
     @ZodArgs(zod.record(zod.number())) dictionary: Record<string, number>,
-    @ZodArgs(zod.string().url().optional()) urlString?: string,
+    @ZodArgs(zod.url().optional()) urlString?: string,
   ) {
     // Here the @ZodArgs(Schema) decorator is inlined and will produce
     // corresponding schema file. If the types are primitives, there will
