@@ -261,7 +261,7 @@ export function ZodArgs<T extends ZodType>(
   }
   else {
     const RegisteredType = _getOrCreateRegisteredType(
-      input as ZodObject,
+      input,
       {
         getScalarTypeFor
       }

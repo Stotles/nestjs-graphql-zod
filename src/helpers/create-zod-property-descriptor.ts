@@ -61,7 +61,7 @@ export function createZodPropertyDescriptor<T extends ZodType>(
               key as keyof output<T>,
               newValue,
               localVariable,
-              result.error as any
+              result.error
             )
           }
 

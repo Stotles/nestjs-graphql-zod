@@ -84,7 +84,7 @@ export interface IModelFromZodOptions<T extends ZodType>
     key: K,
     newValue: output<T>[ K ],
     oldValue: output<T>[ K ] | undefined,
-    error: ZodError<output<T>[ K ]>
+    error: ZodError
   ): output<T>[ keyof output<T> ] | void
 
   /**
@@ -207,12 +207,12 @@ export function modelFromZodBase<
     ...options,
     name,
     description,
-    getDecorator: options.getDecorator as any,
+    getDecorator: options.getDecorator,
   })
 
   for (const { descriptor, key, decorateFieldProperty } of parsed) {
-    Object.defineProperty(prototype, key as string, descriptor)
-    decorateFieldProperty(prototype, key as string)
+    Object.defineProperty(prototype, key, descriptor)
+    decorateFieldProperty(prototype, key)
   }
 
   _generatedClasses.set(zodInput, DynamicZodModel)

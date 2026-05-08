@@ -9,14 +9,14 @@ import { isZodInstance } from './is-zod-instance'
  * @return {Record<string, ZodType>} A record of default values.
  */
 function generateDefaultsForObject(input: ZodObject) {
-  return Object.keys(input.shape).reduce((curr, key) => {
-    const res = generateDefaults<ZodType>(input.shape[ key ] as ZodType)
+  return Object.keys(input.shape).reduce<Record<string, any>>((curr, key) => {
+    const res = generateDefaults<ZodType>(input.shape[ key ])
     if (res !== undefined) {
       curr[ key ] = res
     }
 
     return curr
-  }, {} as Record<string, any>)
+  }, {})
 }
 
 /**
@@ -30,7 +30,7 @@ function generateDefaultsForObject(input: ZodObject) {
  */
 export function generateDefaults<T extends ZodType>(input: T) {
   if (isZodInstance(ZodObject, input)) {
-    return generateDefaultsForObject(input as ZodObject)
+    return generateDefaultsForObject(input)
   }
   else if (isZodInstance(ZodDefault, input)) {
     return input._def.defaultValue

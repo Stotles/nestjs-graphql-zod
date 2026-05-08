@@ -35,7 +35,7 @@ describe('modelFromZod', () => {
     const instance = new Model()
 
     expect(() => {
-      ;(instance as any).count = 'not a number'
+      ;instance.count = ('not a number' as unknown as number)
     }).toThrow()
   })
 
@@ -119,7 +119,7 @@ describe('modelFromZod', () => {
       doNotThrow: true,
     })
     const instance = new Model()
-    ;(instance as any).name = 42
+    ;instance.name = (42 as unknown as string)
     expect(instance.name).toBeUndefined()
   })
 })

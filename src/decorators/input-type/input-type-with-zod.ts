@@ -100,8 +100,8 @@ export function InputTypeWithZod<T extends ZodObject>(
     })
 
     for (const { descriptor, key, decorateFieldProperty } of parsed) {
-      Object.defineProperty(prototype, key as string, descriptor)
-      decorateFieldProperty(prototype, key as string)
+      Object.defineProperty(prototype, key, descriptor)
+      decorateFieldProperty(prototype, key)
     }
 
     return returnValue as void

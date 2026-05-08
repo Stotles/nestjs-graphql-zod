@@ -14,7 +14,7 @@ describe('buildEnumType', () => {
     }
 
     const result = buildEnumType('status', typeInfo, { name: 'User' })
-    expect(result).toEqual({ active: 'active', inactive: 'inactive' })
+    expect(result).toStrictEqual({ active: 'active', inactive: 'inactive' })
   })
 
   it('should register a nativeEnum (now ZodEnum in v4)', () => {
@@ -28,7 +28,7 @@ describe('buildEnumType', () => {
     }
 
     const result = buildEnumType('status', typeInfo, { name: 'Task' })
-    expect(result).toEqual({ Active: 'active', Inactive: 'inactive' })
+    expect(result).toStrictEqual({ Active: 'active', Inactive: 'inactive' })
   })
 
   it('should handle enum in array', () => {

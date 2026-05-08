@@ -6,7 +6,7 @@ import { createZodPropertyDescriptor } from '../../src/helpers/create-zod-proper
 describe('createZodPropertyDescriptor', () => {
   it('should create a descriptor with get/set for string', () => {
     const descriptor = createZodPropertyDescriptor('name', z.string(), {})
-    const obj = {} as any
+    const obj = {} as Record<string, any>
     Object.defineProperty(obj, 'name', descriptor)
 
     obj.name = 'hello'
@@ -15,7 +15,7 @@ describe('createZodPropertyDescriptor', () => {
 
   it('should throw on invalid value by default', () => {
     const descriptor = createZodPropertyDescriptor('count', z.number(), {})
-    const obj = {} as any
+    const obj = {} as Record<string, any>
     Object.defineProperty(obj, 'count', descriptor)
 
     expect(() => { obj.count = 'not a number' }).toThrow()
@@ -23,7 +23,7 @@ describe('createZodPropertyDescriptor', () => {
 
   it('should use safeParse when safe option is true', () => {
     const descriptor = createZodPropertyDescriptor('name', z.string(), { safe: true })
-    const obj = {} as any
+    const obj = {} as Record<string, any>
     Object.defineProperty(obj, 'name', descriptor)
 
     obj.name = 'hello'
@@ -39,7 +39,7 @@ describe('createZodPropertyDescriptor', () => {
         return 'fallback'
       }
     })
-    const obj = {} as any
+    const obj = {} as Record<string, any>
     Object.defineProperty(obj, 'name', descriptor)
 
     obj.name = 123
@@ -49,7 +49,7 @@ describe('createZodPropertyDescriptor', () => {
 
   it('should set undefined on error when doNotThrow is true', () => {
     const descriptor = createZodPropertyDescriptor('name', z.string(), { doNotThrow: true })
-    const obj = {} as any
+    const obj = {} as Record<string, any>
     Object.defineProperty(obj, 'name', descriptor)
 
     obj.name = 123
@@ -59,7 +59,7 @@ describe('createZodPropertyDescriptor', () => {
   it('should handle default values from ZodDefault', () => {
     const schema = z.string().default('default_value')
     const descriptor = createZodPropertyDescriptor('name', schema, {})
-    const obj = {} as any
+    const obj = {} as Record<string, any>
     Object.defineProperty(obj, 'name', descriptor)
 
     expect(obj.name).toBe('default_value')

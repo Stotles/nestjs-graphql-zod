@@ -18,7 +18,7 @@ describe('ZodValidatorPipe', () => {
     const pipe = new ZodValidatorPipe(schema)
     const input = { name: 'Alice', age: 30 }
     const result = await pipe.transform(input, metadata)
-    expect(result).toEqual(input)
+    expect(result).toStrictEqual(input)
   })
 
   it('should throw BadRequestException on invalid data', async () => {
@@ -51,6 +51,39 @@ describe('ZodValidatorPipe', () => {
       expect.fail('Should have thrown')
     } catch (err) {
       expect(err).toBeInstanceOf(BadRequestException)
+    }
+  })
+
+  it('should use an empty property when the issue has no path (primitive-root schema)', async () => {
+    const pipe = new ZodValidatorPipe(z.string())
+
+    try {
+      await pipe.transform(123, metadata)
+      expect.fail('Should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(BadRequestException)
+      const response = (err as BadRequestException).getResponse() as { message: any[] }
+      const [ top ] = response.message
+      expect(top.property).toBe('')
+      expect(top.children).toBeUndefined()
+      expect(top.value).toBe(123)
+    }
+  })
+
+  it('should coerce numeric top-level path segments to strings for array-root schemas', async () => {
+    const schema = z.array(z.object({ name: z.string() }))
+    const pipe = new ZodValidatorPipe(schema)
+
+    try {
+      await pipe.transform([ { name: 'ok' }, { name: 123 } ], metadata)
+      expect.fail('Should have thrown')
+    } catch (err) {
+      expect(err).toBeInstanceOf(BadRequestException)
+      const response = (err as BadRequestException).getResponse() as { message: any[] }
+      const [ top ] = response.message
+      expect(top.property).toBe('1')
+      expect(top.children?.[ 0 ].property).toBe('name')
+      expect(top.children?.[ 0 ].value).toBe(123)
     }
   })
 })

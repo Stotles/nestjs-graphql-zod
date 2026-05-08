@@ -172,7 +172,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
     }
   }
   else if (isZodInstance(ZodNumber, prop)) {
-    const checks = prop._def.checks as any[] | undefined
+    const checks = prop._def.checks
     const isInt = Boolean(checks?.find((check: any) => check.isInt === true))
 
     return {

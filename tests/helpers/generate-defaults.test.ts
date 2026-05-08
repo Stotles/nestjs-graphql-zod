@@ -19,8 +19,8 @@ describe('generateDefaults', () => {
       name: z.string().default('test'),
       age: z.number().default(0),
     })
-    const defaults = generateDefaults(schema) as any
-    expect(defaults).toEqual({ name: 'test', age: 0 })
+    const defaults = generateDefaults(schema)
+    expect(defaults).toStrictEqual({ name: 'test', age: 0 })
   })
 
   it('should skip non-default fields in object', () => {
@@ -28,9 +28,9 @@ describe('generateDefaults', () => {
       name: z.string(),
       age: z.number().default(0),
     })
-    const defaults = generateDefaults(schema) as any
-    expect(defaults).toEqual({ age: 0 })
-    expect(defaults.name).toBeUndefined()
+    const defaults = generateDefaults(schema)
+    expect(defaults).toStrictEqual({ age: 0 })
+    expect(defaults).not.toHaveProperty('name')
   })
 
   it('should return undefined for types without defaults', () => {
