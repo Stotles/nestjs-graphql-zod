@@ -26,7 +26,7 @@ import {
   modelFromZod,
   modelFromZodBase,
 } from '../model-from-zod'
-import { getZodObjectName } from './get-zod-object-name'
+import { Direction, getZodObjectName, resolvePipeTarget } from './get-zod-object-name'
 import { isZodInstance } from './is-zod-instance'
 import { toTitleCase } from './to-title-case'
 
@@ -134,17 +134,19 @@ type Options<T extends ZodType> = IModelFromZodOptions<T> & {
  *
  * @param {ZodType} prop The `zod` object property.
  * @param {Options<T>} options The options for conversion.
+ * @param {Direction} direction Whether to resolve the input (client-sent) or output (server-produced) side of transforming schemas like `ZodPipe`.
  * @return {ZodTypeInfo} The {@link ZodTypeInfo} of the property.
  */
 export function getFieldInfoFromZod<T extends ZodType>(
   key: string,
   prop: ZodType,
-  options: Options<T>
+  options: Options<T>,
+  direction: Direction
 ): ZodTypeInfo {
 
   // Fundamental types
   if (isZodInstance(ZodArray, prop)) {
-    const data = getFieldInfoFromZod(key, prop.element as ZodType, options)
+    const data = getFieldInfoFromZod(key, prop.element as ZodType, options, direction)
 
     const {
       type,
@@ -216,10 +218,22 @@ export function getFieldInfoFromZod<T extends ZodType>(
       model = modelFromZodBase(
         prop as any,
         nestedOptions,
-        options.getDecorator(prop as any as T, nestedOptions.name)
+        options.getDecorator(prop as any as T, nestedOptions.name),
+        direction,
       )
-    }
-    else {
+    } else {
+      // No decorator override means we fall back to `@ObjectType` via
+      // `modelFromZod` — which is only meaningful on the output path. An
+      // input-side caller must supply a `getDecorator` so nested ZodObjects
+      // get wrapped with `@InputType` instead.
+      if (direction !== 'output') {
+        throw new Error(
+          `Cannot build nested type for "${key}": direction is "${direction}" `
+          + `but no \`getDecorator\` was provided to wrap nested ZodObjects. `
+          + `Supply \`getDecorator\` in options (or use an input-side entry `
+          + `point like \`InputTypeWithZod\`).`
+        )
+      }
       model = modelFromZod(prop as any, nestedOptions)
     }
 
@@ -241,13 +255,13 @@ export function getFieldInfoFromZod<T extends ZodType>(
 
   // Basic wrappers which don't change the type, nullability or optionality
   if (isZodInstance(ZodDefault, prop)) {
-    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
   }
   if (isZodInstance(ZodReadonly, prop)) {
-    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
   }
   if (isZodInstance(ZodPrefault, prop)) {
-    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
   }
 
   // Wrappers which may change the nullability or optionality, but not the type
@@ -258,7 +272,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isOfArray,
       isItemNullable,
       isItemOptional,
-    } = getFieldInfoFromZod(key, prop.unwrap() as ZodType, options)
+    } = getFieldInfoFromZod(key, prop.unwrap() as ZodType, options, direction)
 
     return {
       type,
@@ -271,17 +285,17 @@ export function getFieldInfoFromZod<T extends ZodType>(
     }
   }
   if (isZodInstance(ZodNonOptional, prop)) {
-    const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+    const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
     return { ...inner, isOptional: false }
   }
   if (isZodInstance(ZodNullable, prop)) {
-    const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+    const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
     return { ...inner, isNullable: true }
   }
 
   // Wrappers which can change the type, nullability and optionality
   if (isZodInstance(ZodPipe, prop)) {
-    return getFieldInfoFromZod(key, prop._def.in as ZodType, options)
+    return getFieldInfoFromZod(key, resolvePipeTarget(prop, direction, key), options, direction)
   }
   if (isZodInstance(ZodLazy, prop)) {
     const getter = prop._def.getter
@@ -294,12 +308,12 @@ export function getFieldInfoFromZod<T extends ZodType>(
       throw new Error(`Invalid ZodLazy schema for Key("${key}"): getter did not return a valid ZodType.`)
     }
 
-    return getFieldInfoFromZod(key, lazyType as ZodType, options)
+    return getFieldInfoFromZod(key, lazyType as ZodType, options, direction)
   }
 
   // Fallback if type isn't directly supported
   const { getScalarTypeFor = getDefaultTypeProvider() } = options
-  const typeName = getZodObjectName(prop)
+  const typeName = getZodObjectName(prop, direction)
 
   if (typeof getScalarTypeFor === 'function') {
     const scalarType = getScalarTypeFor(typeName)

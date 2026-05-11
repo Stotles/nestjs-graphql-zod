@@ -20,6 +20,7 @@ import {
   ZodRecord,
   ZodString,
   ZodStringFormat,
+  ZodTransform,
   ZodType,
   ZodUnion,
 } from 'zod'
@@ -28,22 +29,30 @@ import { isZodInstance } from './is-zod-instance'
 import { toTitleCase } from './to-title-case'
 
 /**
+ * Which side of a transforming zod schema to inspect when mapping to a GraphQL
+ * type. `'input'` walks toward the value a client sends; `'output'` walks
+ * toward the value the schema produces.
+ */
+export type Direction = 'input' | 'output'
+
+/**
  * Builds the corresponding zod type name.
  *
  * @export
  * @param {ZodType} instance The zod type instance.
+ * @param {Direction} direction Whether to resolve the input (client-sent) or output (server-produced) side of transforming schemas like `ZodPipe`.
  * @return {string} A built type name for the input.
  *
  * @__PURE__
  */
-export function getZodObjectName(instance: ZodType): string {
+export function getZodObjectName(instance: ZodType, direction: Direction): string {
   if (isZodInstance(ZodArray, instance)) {
-    const innerName = getZodObjectName(instance.element as ZodType)
+    const innerName = getZodObjectName(instance.element as ZodType, direction)
     return `Array<${innerName}>`
   }
 
   if (isZodInstance(ZodOptional, instance)) {
-    const innerName = getZodObjectName(instance.unwrap() as ZodType)
+    const innerName = getZodObjectName(instance.unwrap() as ZodType, direction)
     return `Optional<${innerName}>`
   }
 
@@ -52,24 +61,24 @@ export function getZodObjectName(instance: ZodType): string {
     // `z.string().optional().nonoptional()` resolves to `String` rather than `Optional<String>`.
     const inner = instance.unwrap() as ZodType
     const target = isZodInstance(ZodOptional, inner) ? inner.unwrap() as ZodType : inner
-    return getZodObjectName(target)
+    return getZodObjectName(target, direction)
   }
 
   if (isZodInstance(ZodPipe, instance)) {
-    return getZodObjectName(instance._def.in as ZodType)
+    return getZodObjectName(resolvePipeTarget(instance, direction), direction)
   }
   if (isZodInstance(ZodLazy, instance)) {
-    return getZodObjectName(instance._def.getter() as ZodType)
+    return getZodObjectName(instance._def.getter() as ZodType, direction)
   }
 
   if (isZodInstance(ZodDefault, instance)) {
-    return getZodObjectName(instance._def.innerType as ZodType)
+    return getZodObjectName(instance._def.innerType as ZodType, direction)
   }
   if (isZodInstance(ZodReadonly, instance)) {
-    return getZodObjectName(instance._def.innerType as ZodType)
+    return getZodObjectName(instance._def.innerType as ZodType, direction)
   }
   if (isZodInstance(ZodPrefault, instance)) {
-    return getZodObjectName(instance._def.innerType as ZodType)
+    return getZodObjectName(instance._def.innerType as ZodType, direction)
   }
 
   if (isZodInstance(ZodEnum, instance)) {
@@ -101,8 +110,8 @@ export function getZodObjectName(instance: ZodType): string {
   }
 
   if (isZodInstance(ZodRecord, instance)) {
-    const keyName = getZodObjectName(instance._def.keyType as ZodType)
-    const valueName = getZodObjectName(instance._def.valueType as ZodType)
+    const keyName = getZodObjectName(instance._def.keyType as ZodType, direction)
+    const valueName = getZodObjectName(instance._def.valueType as ZodType, direction)
     return `Record<${keyName}, ${valueName}>`
   }
 
@@ -130,11 +139,11 @@ export function getZodObjectName(instance: ZodType): string {
   }
 
   if (isZodInstance(ZodUnion, instance)) {
-    return (instance.options as ZodType[]).map(o => getZodObjectName(o)).join(' | ')
+    return (instance.options as ZodType[]).map(o => getZodObjectName(o, direction)).join(' | ')
   }
 
   if (isZodInstance(ZodNullable, instance)) {
-    const innerName = getZodObjectName(instance._def.innerType as ZodType)
+    const innerName = getZodObjectName(instance._def.innerType as ZodType, direction)
     return `Nullable<${innerName}>`
   }
 
@@ -150,4 +159,32 @@ export function getZodObjectName(instance: ZodType): string {
   if (isZodInstance(ZodAny, instance)) return 'Any'
   if (isZodInstance(ZodNull, instance)) return 'Null'
   return 'Unknown'
+}
+
+/**
+ * Picks the side of a `ZodPipe` to inspect when mapping it to a GraphQL type.
+ *
+ * A `ZodPipe` has an `in` and `out` schema; either side can be a `ZodTransform`
+ * whose type is opaque (just a function — at runtime the function's parameter
+ * and return types are erased, and `ZodTransform` carries no schema for them).
+ * Examples of pipe shapes:
+ *   `z.string().transform(fn)`        => in=ZodString,    out=ZodTransform
+ *   `z.preprocess(fn, z.enum([...]))` => in=ZodTransform, out=ZodEnum
+ *   `.transform(fn).pipe(z.number())` => in=ZodPipe(...), out=ZodNumber
+ *
+ * `'input'` picks `in` (what the client sends); `'output'` picks `out` (what
+ * the schema produces). If the preferred side is a `ZodTransform`, the type
+ * is not expressible from the schema, so we throw rather than silently guess —
+ * the developer should use `.pipe(z.X)` to declare the type explicitly.
+ */
+export function resolvePipeTarget(pipe: ZodPipe, direction: Direction, key?: string): ZodType {
+  const target = (direction === 'input' ? pipe._def.in : pipe._def.out) as ZodType
+  if (isZodInstance(ZodTransform, target)) {
+    throw new Error(
+      `Cannot determine GraphQL type${key ? ` for field '${key}'` : ''}: `
+      + `the ${direction} side of this ZodPipe is a ZodTransform, whose type is opaque at runtime. `
+      + `Use \`.pipe(z.X)\` to declare the type explicitly.`
+    )
+  }
+  return target
 }

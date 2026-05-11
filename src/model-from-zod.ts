@@ -8,6 +8,7 @@ import { ObjectType, ObjectTypeOptions } from '@nestjs/graphql'
 
 import { extractNameAndDescription, parseShape } from './helpers'
 import { ZodObjectKey } from './helpers/constants'
+import { Direction } from './helpers/get-zod-object-name'
 
 export interface IModelFromZodOptions<T extends ZodType>
   extends ObjectTypeOptions {
@@ -160,7 +161,12 @@ type Options<T extends ZodType>
     getDecorator?(zodInput: T, key: string): ClassDecorator
   }
 
-let _generatedClasses: WeakMap<ZodType, Type> | undefined
+// Cache of generated classes, partitioned by direction. The same Zod schema
+// instance can legitimately back both a GraphQL output (`@ObjectType`) and
+// input (`@InputType`) class, so the two must not share a slot — otherwise
+// the second caller silently receives the first caller's decorated class
+// and `@nestjs/graphql` rejects the schema at build time.
+let _generatedClasses: { input: WeakMap<ZodType, Type>; output: WeakMap<ZodType, Type> } | undefined
 
 /**
  * Creates a dynamic class which will be compatible with GraphQL, from a
@@ -170,6 +176,8 @@ let _generatedClasses: WeakMap<ZodType, Type> | undefined
  * @template T The type of the zod input.
  * @param {T} zodInput The zod object input.
  * @param {IModelFromZodOptions<T>} [options={}] The options for model creation.
+ * @param {ClassDecorator} decorator The decorator to apply to the generated class.
+ * @param {Direction} direction Whether the GraphQL type being built represents an input (what the client sends) or an output (what the schema produces).
  * @return {Type} A class that represents the `zod` object and also
  * compatible with `GraphQL`.
  */
@@ -179,11 +187,14 @@ export function modelFromZodBase<
 >(
   zodInput: T,
   options: O = {} as O,
-  decorator: ClassDecorator
+  decorator: ClassDecorator,
+  direction: Direction,
 ): Type<output<T>> {
-  const previousRecord
-    = (_generatedClasses ??= new WeakMap<ZodType, Type>())
-      .get(zodInput)
+  const cache = _generatedClasses ??= {
+    input: new WeakMap<ZodType, Type>(),
+    output: new WeakMap<ZodType, Type>(),
+  }
+  const previousRecord = cache[direction].get(zodInput)
 
   if (previousRecord) return previousRecord
 
@@ -208,14 +219,14 @@ export function modelFromZodBase<
     name,
     description,
     getDecorator: options.getDecorator,
-  })
+  }, direction)
 
   for (const { descriptor, key, decorateFieldProperty } of parsed) {
     Object.defineProperty(prototype, key, descriptor)
     decorateFieldProperty(prototype, key)
   }
 
-  _generatedClasses.set(zodInput, DynamicZodModel)
+  cache[direction].set(zodInput, DynamicZodModel)
   return DynamicZodModel as Type<output<T>>
 }
 
@@ -242,5 +253,5 @@ export function modelFromZod<
     ...options
   })
 
-  return modelFromZodBase(zodInput, options, decorator)
+  return modelFromZodBase(zodInput, options, decorator, 'output')
 }

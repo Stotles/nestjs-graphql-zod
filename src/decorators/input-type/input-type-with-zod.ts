@@ -97,7 +97,7 @@ export function InputTypeWithZod<T extends ZodObject>(
         return buildInputTypeDecorator(key, inputTypeOptions)
       },
       getScalarTypeFor: zodOptions.getScalarTypeFor,
-    })
+    }, 'input')
 
     for (const { descriptor, key, decorateFieldProperty } of parsed) {
       Object.defineProperty(prototype, key, descriptor)

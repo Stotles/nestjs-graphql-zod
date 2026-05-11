@@ -250,7 +250,7 @@ export function ZodArgs<T extends ZodType>(
 
   if (!isZodInstance(ZodObject, input)) {
     pipes.unshift(new ZodValidatorPipe(input))
-    const typeInfo = getFieldInfoFromZod('', input, options)
+    const typeInfo = getFieldInfoFromZod('', input, options, 'input')
     const nullability = getNullability(typeInfo)
     const description = getDescription(input)
 

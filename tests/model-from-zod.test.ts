@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import { describe, it, expect } from 'vitest'
 import { z } from 'zod'
-import { modelFromZod } from '../src/model-from-zod'
+import { modelFromZod, modelFromZodBase } from '../src/model-from-zod'
 
 describe('modelFromZod', () => {
   it('should create a class from a simple object schema', () => {
@@ -106,6 +106,26 @@ describe('modelFromZod', () => {
     const Model1 = modelFromZod(schema, { name: 'CachedModel_Test' })
     const Model2 = modelFromZod(schema, { name: 'CachedModel_Test' })
     expect(Model1).toBe(Model2)
+  })
+
+  it('should not share cached classes across input and output directions', () => {
+    const schema = z.object({
+      id: z.string(),
+    }).describe('CrossDirectionModel: test')
+
+    const noop: ClassDecorator = () => { /* no-op */ }
+
+    const OutputModel = modelFromZodBase(schema, { name: 'CrossDirection_Out' }, noop, 'output')
+    const InputModel = modelFromZodBase(schema, { name: 'CrossDirection_In' }, noop, 'input')
+
+    expect(OutputModel).not.toBe(InputModel)
+
+    // Re-issuing under the same direction still hits the cache.
+    const OutputAgain = modelFromZodBase(schema, { name: 'CrossDirection_Out' }, noop, 'output')
+    expect(OutputAgain).toBe(OutputModel)
+
+    const InputAgain = modelFromZodBase(schema, { name: 'CrossDirection_In' }, noop, 'input')
+    expect(InputAgain).toBe(InputModel)
   })
 
   it('should respect safe parse option', () => {

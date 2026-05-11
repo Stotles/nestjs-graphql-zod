@@ -7,6 +7,10 @@ The sections are in descending order of the change date.
 ### Added
 - Support for `zod` v4.
 
+### Changed
+- Stricter handling of zod effects.
+- `getZodObjectName`, `modelFromZodBase` & `parseShape` functions now require a `direction` parameter. This was done to correctly handle zod effects.
+
 ### Removed
 - Support for `zod` v3.
 
