@@ -173,8 +173,9 @@ export function getFieldInfoFromZod<T extends ZodType>(
     }
   }
   else if (isZodInstance(ZodNumber, prop)) {
-    const checks = prop._def.checks
-    const isInt = Boolean(checks?.find((check: any) => check.isInt === true))
+    const format = prop.format
+    // Purposely not including `uint32` since GraphQL Int type is a signed 32-bit integer
+    const isInt = format === 'safeint' || format === 'int32'
 
     return {
       type: isInt ? Int : Number,

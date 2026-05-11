@@ -148,6 +148,23 @@ describe('getFieldInfoFromZod', () => {
     })
   })
 
+  describe('zod v4 number formats', () => {
+    const cases: Array<[string, () => any, any]> = [
+      ['int', () => z.int(), Int],
+      ['int32', () => z.int32(), Int],
+      ['uint32', () => z.uint32(), Number], // GraphQL Int is signed, so should not use Int here
+      ['float32', () => z.float32(), Number],
+      ['float64', () => z.float64(), Number],
+    ]
+
+    for (const [name, build, expected] of cases) {
+      it(`should map z.${name}() to ${expected === Int ? 'Int' : 'Number'}`, () => {
+        const info = getFieldInfoFromZod('field', build(), defaultOptions)
+        expect(info.type).toBe(expected)
+      })
+    }
+  })
+
   describe('canParse', () => {
     it('should return true for supported types', () => {
       expect(getFieldInfoFromZod.canParse(z.string())).toBe(true)
