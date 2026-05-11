@@ -49,7 +49,7 @@ describe('ZodArgs', () => {
 
 describe('ZodArgs.Of', () => {
   it('should be a type-level utility (just verify it compiles)', () => {
-    type Result = ZodArgs.Of<typeof z.ZodString>
+    type Result = ZodArgs.Of<z.ZodString>
     const _check: Result = 'hello'
     expect(_check).toBe('hello')
   })
