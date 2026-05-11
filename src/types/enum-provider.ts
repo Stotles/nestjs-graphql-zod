@@ -27,7 +27,15 @@ export interface EnumProviderData {
   description?: string
 
   /**
-   * Indicates that if the enum was a native enum.
+   * Indicates whether the enum is a numeric TypeScript enum (the v3
+   * `z.nativeEnum` shape, where the input object carries reverse mappings
+   * and the schema's values include numbers).
+   *
+   * Zod v4 unified `z.enum` and `z.nativeEnum`, so the field is no longer
+   * a 1:1 mirror of which builder was used — it now reflects the runtime
+   * shape of the underlying enum object. String-keyed enums (whether
+   * created from a plain object or a TypeScript string enum) report
+   * `false`; only numeric TypeScript enums report `true`.
    *
    * @type {boolean}
    * @memberof EnumProviderData
