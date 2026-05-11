@@ -148,6 +148,75 @@ describe('getFieldInfoFromZod', () => {
     })
   })
 
+  describe('zod v4 wrappers', () => {
+    it('should unwrap ZodReadonly', () => {
+      const info = getFieldInfoFromZod('name', z.string().readonly(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isOptional).toBe(false)
+      expect(info.isNullable).toBe(false)
+    })
+
+    it('should unwrap ZodPrefault', () => {
+      const info = getFieldInfoFromZod('name', z.string().prefault('hi'), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isOptional).toBe(false)
+    })
+
+    it('should unwrap ZodLazy', () => {
+      const info = getFieldInfoFromZod('name', z.lazy(() => z.string()), defaultOptions)
+      expect(info.type).toBe(String)
+    })
+
+    it('should resolve ZodLazy that returns a number', () => {
+      const info = getFieldInfoFromZod('count', z.lazy(() => z.number()), defaultOptions)
+      expect(info.type).toBe(Number)
+    })
+
+    it('should throw when ZodLazy getter is not a function', () => {
+      const broken = z.lazy(() => z.string())
+      ;(broken as any)._def.getter = null
+      expect(() => getFieldInfoFromZod('name', broken, defaultOptions))
+        .toThrow(/ZodLazy.*getter is not a function/)
+    })
+
+    it('should throw when ZodLazy getter does not return a ZodType', () => {
+      const broken = z.lazy(() => z.string())
+      ;(broken as any)._def.getter = () => 'not-a-zod-type'
+      expect(() => getFieldInfoFromZod('name', broken, defaultOptions))
+        .toThrow(/ZodLazy.*did not return a valid ZodType/)
+    })
+
+    it('should unwrap ZodNonOptional and clear isOptional', () => {
+      const info = getFieldInfoFromZod('name', z.string().optional().nonoptional(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isOptional).toBe(false)
+    })
+
+    it('should follow Optional through ZodReadonly', () => {
+      const info = getFieldInfoFromZod('name', z.string().readonly().optional(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isOptional).toBe(true)
+    })
+
+    it('should follow Nullable through ZodPrefault', () => {
+      const info = getFieldInfoFromZod('name', z.string().prefault('hi').nullable(), defaultOptions)
+      expect(info.type).toBe(String)
+      expect(info.isNullable).toBe(true)
+    })
+
+    it('should detect Int through ZodReadonly', () => {
+      const info = getFieldInfoFromZod('count', z.int().readonly(), defaultOptions)
+      expect(info.type).toBe(Int)
+    })
+
+    it('canParse should accept the new wrappers', () => {
+      expect(getFieldInfoFromZod.canParse(z.string().readonly())).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.string().prefault('x'))).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.lazy(() => z.string()))).toBe(true)
+      expect(getFieldInfoFromZod.canParse(z.string().optional().nonoptional())).toBe(true)
+    })
+  })
+
   describe('zod v4 number formats', () => {
     const cases: Array<[string, () => any, any]> = [
       ['int', () => z.int(), Int],

@@ -64,6 +64,20 @@ describe('unwrapNestedZod', () => {
     expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
   })
 
+  it('should unwrap ZodReadonly', () => {
+    const inner = z.string()
+    const wrapped = inner.readonly()
+    const unwrapped = unwrapNestedZod(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
+  it('should unwrap ZodPrefault', () => {
+    const inner = z.string()
+    const wrapped = inner.prefault('seed')
+    const unwrapped = unwrapNestedZod(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
   it('should return same value for non-wrapping types', () => {
     const str = z.string()
     expect(unwrapNestedZod(str)).toBe(str)
@@ -79,6 +93,12 @@ describe('unwrapNestedZodRecursively', () => {
 
   it('should recursively unwrap default + optional', () => {
     const wrapped = z.string().default('x').optional()
+    const unwrapped = unwrapNestedZodRecursively(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
+  it('should recursively unwrap readonly + prefault + optional', () => {
+    const wrapped = z.string().prefault('x').readonly().optional()
     const unwrapped = unwrapNestedZodRecursively(wrapped)
     expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
   })

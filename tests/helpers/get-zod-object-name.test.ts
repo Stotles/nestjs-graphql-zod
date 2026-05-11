@@ -122,6 +122,34 @@ describe('getZodObjectName', () => {
     })
   })
 
+  describe('zod v4 wrappers', () => {
+    it('should resolve through ZodReadonly', () => {
+      expect(getZodObjectName(z.string().readonly())).toBe('String')
+    })
+
+    it('should resolve through ZodPrefault', () => {
+      expect(getZodObjectName(z.string().prefault('x'))).toBe('String')
+    })
+
+    it('should resolve through ZodLazy', () => {
+      expect(getZodObjectName(z.lazy(() => z.number()))).toBe('Number')
+    })
+
+    it('should resolve through ZodNonOptional', () => {
+      expect(getZodObjectName(z.string().nonoptional())).toBe('String')
+    })
+
+    it('should peel inner ZodOptional when wrapped by ZodNonOptional', () => {
+      // z.string().optional().nonoptional() must not be reported as
+      // Optional<String> — the outer .nonoptional() restores requiredness.
+      expect(getZodObjectName(z.string().optional().nonoptional())).toBe('String')
+    })
+
+    it('should resolve nested wrappers (readonly + prefault)', () => {
+      expect(getZodObjectName(z.string().prefault('x').readonly())).toBe('String')
+    })
+  })
+
   it('should return "Unknown" for unrecognized types', () => {
     expect(getZodObjectName(z.unknown())).toBe('Unknown')
   })

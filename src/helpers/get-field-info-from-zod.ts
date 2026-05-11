@@ -4,11 +4,15 @@ import {
   ZodBoolean,
   ZodDefault,
   ZodEnum,
+  ZodLazy,
+  ZodNonOptional,
   ZodNullable,
   ZodNumber,
   ZodObject,
   ZodOptional,
   ZodPipe,
+  ZodPrefault,
+  ZodReadonly,
   ZodString,
   ZodStringFormat,
   ZodType,
@@ -138,6 +142,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
   options: Options<T>
 ): ZodTypeInfo {
 
+  // Fundamental types
   if (isZodInstance(ZodArray, prop)) {
     const data = getFieldInfoFromZod(key, prop.element as ZodType, options)
 
@@ -158,7 +163,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isItemOptional,
     }
   }
-  else if (isZodInstance(ZodBoolean, prop)) {
+  if (isZodInstance(ZodBoolean, prop)) {
     return {
       type: Boolean,
       isOptional: prop.isOptional(),
@@ -172,7 +177,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isNullable: prop.isNullable(),
     }
   }
-  else if (isZodInstance(ZodNumber, prop)) {
+  if (isZodInstance(ZodNumber, prop)) {
     const format = prop.format
     // Purposely not including `uint32` since GraphQL Int type is a signed 32-bit integer
     const isInt = format === 'safeint' || format === 'int32'
@@ -183,26 +188,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isNullable: prop.isNullable(),
     }
   }
-  else if (isZodInstance(ZodOptional, prop)) {
-    const {
-      type,
-      isEnum,
-      isOfArray,
-      isItemNullable,
-      isItemOptional,
-    } = getFieldInfoFromZod(key, prop.unwrap() as ZodType, options)
-
-    return {
-      type,
-      isEnum,
-      isOfArray,
-      isItemNullable,
-      isItemOptional,
-      isOptional: true,
-      isNullable: prop.isNullable(),
-    }
-  }
-  else if (isZodInstance(ZodObject, prop)) {
+  if (isZodInstance(ZodObject, prop)) {
     const isNullable = prop.isNullable() || prop.isOptional()
     const {
       provideNameForNestedClass = defaultNestedClassNameProvider,
@@ -244,7 +230,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isOptional: prop.isOptional(),
     }
   }
-  else if (isZodInstance(ZodEnum, prop)) {
+  if (isZodInstance(ZodEnum, prop)) {
     return {
       type: prop,
       isNullable: prop.isNullable(),
@@ -252,46 +238,95 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isEnum: true,
     }
   }
-  else if (isZodInstance(ZodDefault, prop)) {
+
+  // Basic wrappers which don't change the type, nullability or optionality
+  if (isZodInstance(ZodDefault, prop)) {
     return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
   }
-  else if (isZodInstance(ZodPipe, prop)) {
-    return getFieldInfoFromZod(key, prop._def.in as ZodType, options)
+  if (isZodInstance(ZodReadonly, prop)) {
+    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
   }
-  else if (isZodInstance(ZodNullable, prop)) {
+  if (isZodInstance(ZodPrefault, prop)) {
+    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+  }
+
+  // Wrappers which may change the nullability or optionality, but not the type
+  if (isZodInstance(ZodOptional, prop)) {
+    const {
+      type,
+      isEnum,
+      isOfArray,
+      isItemNullable,
+      isItemOptional,
+    } = getFieldInfoFromZod(key, prop.unwrap() as ZodType, options)
+
+    return {
+      type,
+      isEnum,
+      isOfArray,
+      isItemNullable,
+      isItemOptional,
+      isOptional: true,
+      isNullable: prop.isNullable(),
+    }
+  }
+  if (isZodInstance(ZodNonOptional, prop)) {
+    const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
+    return { ...inner, isOptional: false }
+  }
+  if (isZodInstance(ZodNullable, prop)) {
     const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options)
     return { ...inner, isNullable: true }
   }
-  else {
-    const { getScalarTypeFor = getDefaultTypeProvider() } = options
-    const typeName = getZodObjectName(prop)
 
-    if (typeof getScalarTypeFor === 'function') {
-      const scalarType = getScalarTypeFor(typeName)
-      let isScalarType = scalarType instanceof GraphQLScalarType
+  // Wrappers which can change the type, nullability and optionality
+  if (isZodInstance(ZodPipe, prop)) {
+    return getFieldInfoFromZod(key, prop._def.in as ZodType, options)
+  }
+  if (isZodInstance(ZodLazy, prop)) {
+    const getter = prop._def.getter
+    if (typeof getter !== 'function') {
+      throw new Error(`Invalid ZodLazy schema for Key("${key}"): getter is not a function.`)
+    }
 
-      if (!isScalarType && scalarType) {
-        let constructor: Function = (scalarType as any)[ 'constructor' ]
-        if (typeof constructor === 'function' && constructor.name === GraphQLScalarType.name) {
-          isScalarType = true
-        }
-      }
+    const lazyType = getter()
+    if (!isZodInstance(ZodType, lazyType)) {
+      throw new Error(`Invalid ZodLazy schema for Key("${key}"): getter did not return a valid ZodType.`)
+    }
 
-      if (isScalarType) {
-        return {
-          isType: true,
-          type: scalarType,
-          isNullable: prop.isNullable(),
-          isOptional: prop.isOptional(),
-        }
-      }
-      else {
-        throw new Error(`The Scalar(Value="${scalarType}", Type="${typeof scalarType}") as Key("${key}") of Type("${typeName}") was not an instance of GraphQLScalarType.`)
+    return getFieldInfoFromZod(key, lazyType as ZodType, options)
+  }
+
+  // Fallback if type isn't directly supported
+  const { getScalarTypeFor = getDefaultTypeProvider() } = options
+  const typeName = getZodObjectName(prop)
+
+  if (typeof getScalarTypeFor === 'function') {
+    const scalarType = getScalarTypeFor(typeName)
+    let isScalarType = scalarType instanceof GraphQLScalarType
+
+    if (!isScalarType && scalarType) {
+      let constructor: Function = (scalarType as any)[ 'constructor' ]
+      if (typeof constructor === 'function' && constructor.name === GraphQLScalarType.name) {
+        isScalarType = true
       }
     }
 
-    throw new Error(`Unsupported type info of Key("${key}") of Type("${typeName}")`)
+    if (isScalarType) {
+      return {
+        isType: true,
+        type: scalarType,
+        isNullable: prop.isNullable(),
+        isOptional: prop.isOptional(),
+      }
+    }
+    else {
+      throw new Error(`The Scalar(Value="${scalarType}", Type="${typeof scalarType}") as Key("${key}") of Type("${typeName}") was not an instance of GraphQLScalarType.`)
+    }
   }
+
+  throw new Error(`Unsupported type info of Key("${key}") of Type("${typeName}")`)
+
 }
 
 export module getFieldInfoFromZod {
@@ -303,11 +338,15 @@ export module getFieldInfoFromZod {
     ZodBoolean,
     ZodDefault,
     ZodEnum,
+    ZodLazy,
+    ZodNonOptional,
     ZodNullable,
     ZodNumber,
     ZodObject,
     ZodOptional,
     ZodPipe,
+    ZodPrefault,
+    ZodReadonly,
     ZodString,
     ZodStringFormat,
   ] as const
