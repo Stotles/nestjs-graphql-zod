@@ -1,9 +1,6 @@
 import type { ZodObject } from 'zod'
 import type {
   DynamicZodModelClass,
-  GraphQLCDF,
-  GraphQLMDF,
-  NameInputMethodDecoratorFactory,
   TypeOptionInputMethodDecoratorFactory,
 } from './types'
 import type {
@@ -20,34 +17,31 @@ import type {
  * @param {(WrapWithZodOptions<O, T> | string | undefined)} nameOrOptions The
  * name or the options.
  * 
- * @param {(GraphQLMDF<O> | GraphQLCDF<O>)} decoratorFactory The decorator
+ * @param {TypeOptionInputMethodDecoratorFactory<O>} decoratorFactory The decorator
  * factory.
- * 
+ *
  * @param {DynamicZodModelClass<T>} model The class that is dynamically built.
- * 
- * @return {MethodDecorator | ClassDecorator | ParameterDecorator} A decorator. 
+ *
+ * @return {MethodDecorator} A decorator.
  */
 export function makeDecoratorFromFactory<
   T extends ZodObject,
   O extends SupportedOptionTypes
 >(
   nameOrOptions: WrapWithZodOptions<O, T> | string | undefined,
-  decoratorFactory: GraphQLMDF<O> | GraphQLCDF<O>,
+  decoratorFactory: TypeOptionInputMethodDecoratorFactory<O>,
   model: DynamicZodModelClass<T>,
 ) {
-  let decorator: MethodDecorator | ClassDecorator | ParameterDecorator
+  let decorator: MethodDecorator
   if (typeof nameOrOptions === 'string') {
-    const factory = decoratorFactory as NameInputMethodDecoratorFactory
-    decorator = factory(nameOrOptions)
+    decorator = decoratorFactory(() => model, { name: nameOrOptions } as O)
   }
   else if (typeof nameOrOptions === 'object') {
     const { zod, ...rest } = nameOrOptions
-    const factory = decoratorFactory as TypeOptionInputMethodDecoratorFactory<O>
-    decorator = factory(() => model, rest as O)
+    decorator = decoratorFactory(() => model, rest as O)
   }
   else {
-    const factory = decoratorFactory as TypeOptionInputMethodDecoratorFactory<O>
-    decorator = factory(() => model)
+    decorator = decoratorFactory(() => model)
   }
 
   return decorator
