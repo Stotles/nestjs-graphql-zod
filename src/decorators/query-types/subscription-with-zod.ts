@@ -158,10 +158,13 @@ export function SubscriptionWithZod<T extends ZodObject>(
 
     if (typeof nameOrOptions === 'string') {
       if (typeof pickedOptions === 'object') {
-        decorate = Subscription(nameOrOptions, pickedOptions)
+        // Strip the library-specific `zod` field so it doesn't leak into
+        // Nest's GraphQL metadata. Mirrors the object-overload branch below.
+        const { zod, ...rest } = pickedOptions
+        decorate = Subscription(() => model, { ...rest, name: nameOrOptions })
       }
       else {
-        decorate = Subscription(nameOrOptions)
+        decorate = Subscription(() => model, { name: nameOrOptions })
       }
     }
     else if (typeof nameOrOptions === 'object') {

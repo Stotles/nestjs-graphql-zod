@@ -7,7 +7,6 @@
     "module": "commonjs",
     "rootDir": "./src",
     "moduleResolution": "node",
-    "baseUrl": ".",
     "declaration": true,
     "emitDeclarationOnly": false,
     "sourceMap": true,
