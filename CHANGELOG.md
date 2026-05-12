@@ -6,6 +6,7 @@ The sections are in descending order of the change date.
 ## [4.0.0] - Unreleased
 ### Added
 - Support for `zod` v4.
+- Improve error handling by informing which schema caused the error, not just the error message and potentially the key.
 
 ### Changed
 - Stricter handling of zod effects.

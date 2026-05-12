@@ -8,6 +8,7 @@ import { ObjectType, ObjectTypeOptions } from '@nestjs/graphql'
 
 import { extractNameAndDescription, parseShape } from './helpers'
 import { ZodObjectKey } from './helpers/constants'
+import { describeZodSchema } from './helpers/describe-zod-schema'
 import { Direction } from './helpers/get-zod-object-name'
 
 export interface IModelFromZodOptions<T extends ZodType>
@@ -253,5 +254,12 @@ export function modelFromZod<
     ...options
   })
 
-  return modelFromZodBase(zodInput, options, decorator, 'output')
+  try {
+    return modelFromZodBase(zodInput, options, decorator, 'output')
+  } catch (err) {
+    throw new Error(
+      `Failed to create GraphQL type${describeZodSchema(zodInput, options.name)}`,
+      { cause: err }
+    )
+  }
 }

@@ -4,6 +4,7 @@ import { PipeTransform, Type } from '@nestjs/common'
 import { Args, ArgsOptions } from '@nestjs/graphql'
 
 import { extractNameAndDescription, getNullability } from '../../helpers'
+import { describeZodSchema } from '../../helpers/describe-zod-schema'
 import { getDescription } from '../../helpers/get-description'
 import { getFieldInfoFromZod } from '../../helpers/get-field-info-from-zod'
 import { isZodInstance } from '../../helpers/is-zod-instance'
@@ -248,27 +249,35 @@ export function ZodArgs<T extends ZodType>(
   options ??= {}
   const { getScalarTypeFor = getDefaultTypeProvider() } = options
 
-  if (!isZodInstance(ZodObject, input)) {
-    pipes.unshift(new ZodValidatorPipe(input))
-    const typeInfo = getFieldInfoFromZod('', input, options, 'input')
-    const nullability = getNullability(typeInfo)
-    const description = getDescription(input)
+  try {
+    if (!isZodInstance(ZodObject, input)) {
+      pipes.unshift(new ZodValidatorPipe(input))
+      const typeInfo = getFieldInfoFromZod('', input, options, 'input')
+      const nullability = getNullability(typeInfo)
+      const description = getDescription(input)
 
-    const { type } = typeInfo
-    options.type = () => type
-    options.nullable = nullability
-    options.description ??= description
-  }
-  else {
-    const RegisteredType = _getOrCreateRegisteredType(
-      input,
-      {
-        getScalarTypeFor
-      }
+      const { type } = typeInfo
+      options.type = () => type
+      options.nullable = nullability
+      options.description ??= description
+    }
+    else {
+      const RegisteredType = _getOrCreateRegisteredType(
+        input,
+        {
+          getScalarTypeFor
+        }
+      )
+
+      pipes.unshift(new ZodValidatorPipe(input, RegisteredType))
+      options.type ??= () => RegisteredType
+    }
+  } catch (err) {
+    const propertySuffix = property ? ` for property '${property}'` : ''
+    throw new Error(
+      `ZodArgs failed${propertySuffix}${describeZodSchema(input, options.name)}`,
+      { cause: err }
     )
-
-    pipes.unshift(new ZodValidatorPipe(input, RegisteredType))
-    options.type ??= () => RegisteredType
   }
 
   if (options.name) {

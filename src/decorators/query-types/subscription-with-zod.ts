@@ -3,6 +3,7 @@ import { plainToInstance } from 'class-transformer'
 import { BadRequestException } from '@nestjs/common'
 import { Subscription, SubscriptionOptions as SO } from '@nestjs/graphql'
 
+import { describeZodSchema } from '../../helpers/describe-zod-schema'
 import { IModelFromZodOptions, modelFromZod } from '../../model-from-zod'
 
 import type { ZodObject, ZodError } from 'zod'
@@ -94,7 +95,12 @@ export function SubscriptionWithZod<T extends ZodObject>(
     zodOptions = pickedOptions.zod
   }
 
-  const model = modelFromZod(input, zodOptions)
+  let model: ReturnType<typeof modelFromZod<T, IModelFromZodOptions<T>>>
+  try {
+    model = modelFromZod(input, zodOptions)
+  } catch (err) {
+    throw new Error(`SubscriptionWithZod failed${describeZodSchema(input, zodOptions?.name)}`, { cause: err })
+  }
 
   return function _SubscriptionWithZod(
     target: any,
