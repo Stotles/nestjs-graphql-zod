@@ -8,12 +8,20 @@ import { IModelFromZodOptions, modelFromZod } from '../../model-from-zod'
 
 import type { ZodObject, ZodError } from 'zod'
 
-export interface SubscriptionOptions<T extends ZodObject> extends Omit<SO, never> {
+/**
+ * Options for {@link SubscriptionWithZod}, mirroring `@nestjs/graphql`'s
+ * {@link SO} (a discriminated union over `nullable: true | false |
+ * NullableList`) plus the library-specific `zod` field for model creation.
+ *
+ * Expressed as a type intersection so the union is preserved and TypeScript
+ * still narrows `defaultValue` based on the `nullable` member.
+ */
+export type SubscriptionOptions<T extends ZodObject> = SO & {
   /**
    * Options for model creation from `zod`.
    *
    * @type {IModelFromZodOptions<T>}
-   * @memberof QueryOptions
+   * @memberof SubscriptionOptions
    */
   zod?: IModelFromZodOptions<T>
 }
