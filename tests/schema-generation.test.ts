@@ -83,11 +83,20 @@ const AuditLog = z.object({
   updatedAt: z.iso.datetime().optional(),
 }).describe('AuditLog: a record of an action taken in the system')
 
+const WrappedDefaultsInput = z.object({
+  plain: z.string().default('plain_value'),
+  readonlyDefault: z.string().default('readonly_value').readonly(),
+  optionalDefault: z.string().default('optional_value').optional(),
+  stackedDefault: z.string().default('stacked_value').optional().readonly(),
+  prefaulted: z.string().prefault('prefault_value'),
+})
+
 const TaskModel = modelFromZod(Task, { name: 'Task' })
 const UserModel = modelFromZod(User, { name: 'User' })
 const UserFullModel = modelFromZod(UserFull)
 const TaskInputModel = inputFromZod(TaskInput, { name: 'TaskInput' })
 const AuditLogModel = modelFromZod(AuditLog, { name: 'AuditLog', description: 'A record of an action taken in the system' })
+const WrappedDefaultsInputModel = inputFromZod(WrappedDefaultsInput, { name: 'WrappedDefaultsInput' })
 
 @Resolver(() => TaskModel)
 class TaskResolver {
@@ -194,6 +203,15 @@ class TaskSubscriptionResolver {
   }
 }
 
+// @Resolver() is purposefully omitted here to ensure that
+// @Query() doesn't require it by mistake.
+class WrappedDefaultsResolver {
+  @Query(() => String)
+  accept(@Args('input', { type: () => WrappedDefaultsInputModel }) _input: unknown) {
+    return 'ok'
+  }
+}
+
 let schema: GraphQLSchema
 // Mirror a typical schema-generation script: lexicographicSortSchema +
 // printSchema. Sorting gives a deterministic SDL ordering so we can pin it
@@ -206,7 +224,13 @@ beforeAll(async () => {
     abortOnError: false,
   })
   const factory = app.get(GraphQLSchemaFactory)
-  schema = await factory.create([TaskResolver, UserResolver, AuditLogResolver, TaskSubscriptionResolver])
+  schema = await factory.create([
+    TaskResolver,
+    UserResolver,
+    AuditLogResolver,
+    TaskSubscriptionResolver,
+    WrappedDefaultsResolver
+  ])
   // Sorting the schema with lexicographicSortSchema so the output is stable across runs
   sortedSdl = printSchema(lexicographicSortSchema(schema))
   await app.close()
@@ -247,6 +271,8 @@ describe('end-to-end (e2e) schema generation', () => {
       }
 
       type Query {
+        accept(input: WrappedDefaultsInput!): String!
+
         """Audit logs for the system"""
         auditLogs: [AuditLog!]!
         task: Task!
@@ -314,6 +340,14 @@ describe('end-to-end (e2e) schema generation', () => {
       type User_Profile {
         email: String!
         homepage: String
+      }
+      
+      input WrappedDefaultsInput {
+        optionalDefault: String = "optional_value"
+        plain: String! = "plain_value"
+        prefaulted: String! = "prefault_value"
+        readonlyDefault: String! = "readonly_value"
+        stackedDefault: String = "stacked_value"
       }"
     `)
   })

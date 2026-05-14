@@ -64,4 +64,18 @@ describe('createZodPropertyDescriptor', () => {
 
     expect(obj.name).toBe('default_value')
   })
+
+  it.each([
+    ['ZodReadonly wrapping ZodDefault', () => z.string().default('default_value').readonly()],
+    ['ZodOptional wrapping ZodDefault', () => z.string().default('default_value').optional()],
+    ['ZodNullable wrapping ZodDefault', () => z.string().default('default_value').nullable()],
+    ['stacked wrappers', () => z.string().default('default_value').optional().readonly()],
+    ['ZodPrefault directly', () => z.string().prefault('default_value')],
+  ])('should extract default through %s', (_label, makeSchema) => {
+    const descriptor = createZodPropertyDescriptor('name', makeSchema(), {})
+    const obj = {} as Record<string, any>
+    Object.defineProperty(obj, 'name', descriptor)
+
+    expect(obj.name).toBe('default_value')
+  })
 })

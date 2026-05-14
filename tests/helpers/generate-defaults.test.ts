@@ -37,4 +37,36 @@ describe('generateDefaults', () => {
     expect(generateDefaults(z.string())).toBeUndefined()
     expect(generateDefaults(z.number())).toBeUndefined()
   })
+
+  it('should peel ZodReadonly to find the inner default', () => {
+    expect(generateDefaults(z.string().default('hello').readonly())).toBe('hello')
+  })
+
+  it('should peel ZodOptional to find the inner default', () => {
+    expect(generateDefaults(z.string().default('hello').optional())).toBe('hello')
+  })
+
+  it('should peel ZodNullable to find the inner default', () => {
+    expect(generateDefaults(z.string().default('hello').nullable())).toBe('hello')
+  })
+
+  it('should peel through stacked wrappers', () => {
+    expect(generateDefaults(z.string().default('hello').optional().readonly())).toBe('hello')
+  })
+
+  it('should peel ZodLazy to find the inner default', () => {
+    expect(generateDefaults(z.lazy(() => z.string().default('hello')))).toBe('hello')
+  })
+
+  it('should return ZodPrefault default value', () => {
+    expect(generateDefaults(z.string().prefault('hello'))).toBe('hello')
+  })
+
+  it('should peel wrappers to find a ZodPrefault default', () => {
+    expect(generateDefaults(z.string().prefault('hello').readonly())).toBe('hello')
+  })
+
+  it('should not surface array element defaults as the array default', () => {
+    expect(generateDefaults(z.array(z.string().default('hello')))).toBeUndefined()
+  })
 })

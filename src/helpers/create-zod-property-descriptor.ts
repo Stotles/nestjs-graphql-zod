@@ -1,10 +1,9 @@
 import {
   output,
-  ZodDefault,
   ZodType,
 } from 'zod'
 
-import { isZodInstance } from './is-zod-instance'
+import { getZodDefaultValue } from './generate-defaults'
 
 import type { IModelFromZodOptions } from '../model-from-zod'
 
@@ -24,11 +23,7 @@ export function createZodPropertyDescriptor<T extends ZodType>(
   input: ZodType,
   opts: IModelFromZodOptions<T>
 ): PropertyDescriptor {
-  let localVariable: any
-
-  if (isZodInstance(ZodDefault, input)) {
-    localVariable = input._def.defaultValue
-  }
+  let localVariable: any = getZodDefaultValue(input)
 
   const {
     safe,
