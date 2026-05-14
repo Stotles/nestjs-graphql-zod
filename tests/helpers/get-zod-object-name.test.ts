@@ -152,6 +152,13 @@ describe('getZodObjectName', () => {
     it('should return "Unknown" for unrecognized types', () => {
       expect(getZodObjectName(z.unknown(), direction)).toBe('Unknown')
     })
+
+    // Doesn't need to be a test with .meta({ graphqlType<direction> }) since this function
+    // shouldn't be called at all when that hint is present
+    it('should throw in both directions due to preprocess & transform', () => {
+      const schema = z.preprocess((val) => String(val), z.string()).transform((str) => str.toUpperCase())
+      expect(() => getZodObjectName(schema, direction)).toThrow()
+    })
   })
 
   describe('direction dependent tests', () => {

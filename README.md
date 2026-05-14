@@ -436,6 +436,20 @@ class ExampleResolver() {
 }
 ```
 
+If your zod schema is using advanced features such as `z.transform()`, the library might not be
+able to automatically infer the GraphQL type. In such cases, you can provide an explicit hint
+using zod's `.meta()` system:
+
+```ts
+const transformedSchema = zod.preprocess((val) => String(val), zod.string()).transform((str) => str.toUpperCase()).meta({
+  graphqlTypeInput: () => String, // Hint for input direction
+  graphqlTypeOutput: () => String, // Hint for output direction
+});
+```
+
+You only need to provide the hint for the direction(s) that the library cannot infer on its own.
+This allows you to use complex zod schemas while still ensuring proper GraphQL type generation.
+
 # Support
 
 To support the project, you can send donations to following addresses:

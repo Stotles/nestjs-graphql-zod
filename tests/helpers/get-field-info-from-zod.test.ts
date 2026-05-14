@@ -245,6 +245,67 @@ describe('getFieldInfoFromZod', () => {
         expect(info.type).toBe(Int)
       })
     })
+
+    describe('forced graphql type', () => {
+      it('should let the override pick a different type than the schema implies', () => {
+        // The schema is a string, but the meta says treat it as Int — the meta wins.
+        const schema = z.string().meta({ graphqlTypeInput: () => Int, graphqlTypeOutput: () => Int })
+        const info = getFieldInfoFromZod('count', schema, defaultOptions, direction)
+        expect(info.type).toBe(Int)
+      })
+
+      it('should allow a transform to work with graphql', () => {
+        // A bare `.transform()` is otherwise opaque on output; the meta tells
+        // the library exactly what GraphQL type to use without needing `.pipe()`.
+        // Not setting graphqlTypeInput on purpose since that should be automatically inferred
+        const schema = z.string()
+          .transform(val => val.toUpperCase())
+          .meta({ graphqlTypeOutput: () => String })
+        const info = getFieldInfoFromZod('name', schema, defaultOptions, direction)
+        expect(info.type).toBe(String)
+      })
+
+      it('should ensure nullable is respected with graphqlType override', () => {
+        const schema = z.coerce
+          .string()
+          .transform(date => (date ? new Date(date).toISOString() : null))
+          .nullable()
+          .meta({ graphqlTypeOutput: () => String })
+        const info = getFieldInfoFromZod('createdAt', schema, defaultOptions, direction)
+        expect(info.type).toBe(String)
+        expect(info.isNullable).toBe(true)
+      })
+
+      it('should mark canParse=true for schemas with a graphqlType meta', () => {
+        const schema = z.unknown().meta({ graphqlTypeInput: () => String, graphqlTypeOutput: () => String })
+        const info = getFieldInfoFromZod('field', schema, defaultOptions, direction)
+        expect(info.type).toBe(String)
+        expect(getFieldInfoFromZod.canParse(schema)).toBe(true)
+      })
+
+      it('should work with preprocess + transform when the meta is present', () => {
+        const schema = z.preprocess((val) => String(val), z.string())
+          .transform((str) => str.toUpperCase())
+          .meta({ graphqlTypeInput: () => String, graphqlTypeOutput: () => String })
+        const info = getFieldInfoFromZod('field', schema, defaultOptions, direction)
+        expect(info.type).toBe(String)
+      })
+
+      it('should handle an async transform with a graphqlType meta', () => {
+        // zod's `safeParse` throws `$ZodAsyncError` when the schema produces a
+        // Promise (an async transform/refine).
+        // `isOptional`/`isNullable` probes the schema with `undefined`/`null`,
+        // which would throw but we need to ensure is being handled gracefully
+        // as otherwise the graphql schema will not be generated.
+        const schema = z.any()
+          .transform(async (val) => val)
+          .meta({ graphqlTypeInput: () => String, graphqlTypeOutput: () => String })
+        const info = getFieldInfoFromZod('field', schema, defaultOptions, direction)
+        expect(info.type).toBe(String)
+        expect(info.isOptional).toBe(false)
+        expect(info.isNullable).toBe(false)
+      })
+    })
   })
 
   describe('direction dependent tests', () => {

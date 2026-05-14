@@ -143,6 +143,21 @@ export function getFieldInfoFromZod<T extends ZodType>(
   options: Options<T>,
   direction: Direction
 ): ZodTypeInfo {
+  // Honour an explicit GraphQL type hint attached via zod's `.meta()` system. This
+  // is the escape hatch for schemas whose type the library cannot recover
+  // from the schema shape alone (e.g. a `.transform(fn)` on the output side).
+  // Checked before pattern-matching so the hint wins over normal inference.
+  const graphqlTypeHint = direction === 'input' ? prop.meta()?.graphqlTypeInput : prop.meta()?.graphqlTypeOutput
+  if (graphqlTypeHint) {
+    if (typeof graphqlTypeHint === 'function') {
+      return {
+        type: graphqlTypeHint(),
+        isOptional: isOptional(prop),
+        isNullable: isNullable(prop),
+      }   
+    }
+    throw new Error(`The "graphqlType${toTitleCase(direction)}" meta property for Key("${key}") is not a function.`)
+  }
 
   // Fundamental types
   if (isZodInstance(ZodArray, prop)) {
@@ -157,8 +172,8 @@ export function getFieldInfoFromZod<T extends ZodType>(
 
     return {
       type: [ type ],
-      isOptional: prop.isOptional(),
-      isNullable: prop.isNullable(),
+      isOptional: isOptional(prop),
+      isNullable: isNullable(prop),
       isEnum,
       isOfArray: true,
       isItemNullable,
@@ -168,15 +183,15 @@ export function getFieldInfoFromZod<T extends ZodType>(
   if (isZodInstance(ZodBoolean, prop)) {
     return {
       type: Boolean,
-      isOptional: prop.isOptional(),
-      isNullable: prop.isNullable(),
+      isOptional: isOptional(prop),
+      isNullable: isNullable(prop),
     }
   }
   if (isZodInstance(ZodString, prop) || isZodInstance(ZodStringFormat, prop)) {
     return {
       type: String,
-      isOptional: prop.isOptional(),
-      isNullable: prop.isNullable(),
+      isOptional: isOptional(prop),
+      isNullable: isNullable(prop),
     }
   }
   if (isZodInstance(ZodNumber, prop)) {
@@ -186,12 +201,11 @@ export function getFieldInfoFromZod<T extends ZodType>(
 
     return {
       type: isInt ? Int : Number,
-      isOptional: prop.isOptional(),
-      isNullable: prop.isNullable(),
+      isOptional: isOptional(prop),
+      isNullable: isNullable(prop),
     }
   }
   if (isZodInstance(ZodObject, prop)) {
-    const isNullable = prop.isNullable() || prop.isOptional()
     const {
       provideNameForNestedClass = defaultNestedClassNameProvider,
     } = options
@@ -210,7 +224,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
       ...options,
       name,
       description: prop.description,
-      isAbstract: isNullable,
+      isAbstract: isNullable(prop) || isOptional(prop),
     }
 
     let model: any
@@ -240,15 +254,15 @@ export function getFieldInfoFromZod<T extends ZodType>(
     return {
       type: model,
       isType: true,
-      isNullable: prop.isNullable(),
-      isOptional: prop.isOptional(),
+      isNullable: isNullable(prop),
+      isOptional: isOptional(prop),
     }
   }
   if (isZodInstance(ZodEnum, prop)) {
     return {
       type: prop,
-      isNullable: prop.isNullable(),
-      isOptional: prop.isOptional(),
+      isNullable: isNullable(prop),
+      isOptional: isOptional(prop),
       isEnum: true,
     }
   }
@@ -281,7 +295,7 @@ export function getFieldInfoFromZod<T extends ZodType>(
       isItemNullable,
       isItemOptional,
       isOptional: true,
-      isNullable: prop.isNullable(),
+      isNullable: isNullable(prop),
     }
   }
   if (isZodInstance(ZodNonOptional, prop)) {
@@ -330,8 +344,8 @@ export function getFieldInfoFromZod<T extends ZodType>(
       return {
         isType: true,
         type: scalarType,
-        isNullable: prop.isNullable(),
-        isOptional: prop.isOptional(),
+        isNullable: isNullable(prop),
+        isOptional: isOptional(prop),
       }
     }
     else {
@@ -374,7 +388,31 @@ export module getFieldInfoFromZod {
    * @return {boolean} `true` if the given input is parseable.
    */
   export function canParse(input: ZodType): boolean {
+    if (typeof input.meta()?.graphqlTypeInput === 'function') return true
+    if (typeof input.meta()?.graphqlTypeOutput === 'function') return true
     return PARSED_TYPES.some(it => isZodInstance(it, input))
+  }
+}
+
+// `safeParse` despite its name can throw if the schema contains `.transform()`
+// or `.preprocess()` that throw on inputs they can't handle. In those cases, we
+// just assume it can't handle `undefined`/`null` and return false since it will
+// be a mistake to throw in that scenario. While there is a small risk of masking
+// a real error from zod, this is something we accept since ZodError shouldn't be
+// ever returned here.
+function isOptional(prop: ZodType): boolean {
+  try {
+    return prop.safeParse(undefined).success
+  } catch {
+    return false
+  }
+}
+
+function isNullable(prop: ZodType): boolean {
+  try {
+    return prop.safeParse(null).success
+  } catch {
+    return false
   }
 }
 
