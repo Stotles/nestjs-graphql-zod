@@ -26,9 +26,19 @@ import {
   modelFromZod,
   modelFromZodBase,
 } from '../model-from-zod'
+import { MAX_ZOD_DEPTH } from './constants'
 import { Direction, getZodObjectName, resolvePipeTarget } from './get-zod-object-name'
 import { isZodInstance } from './is-zod-instance'
 import { toTitleCase } from './to-title-case'
+
+// Tracks nested invocation depth of `getFieldInfoFromZod`. Each recursive
+// branch (ZodArray element, ZodOptional/Nullable/Readonly/Default/Prefault/
+// NonOptional inner type, ZodPipe direction target, ZodLazy getter result)
+// increments this counter. The hard cap protects against `ZodLazy` chains
+// that don't resolve through a `ZodObject` — those bypass the class cache
+// in `modelFromZodBase` and would otherwise recurse until the JS stack runs
+// out (e.g. `let self; self = z.lazy(() => self)` at a field position).
+let _getFieldInfoDepth = 0
 
 /**
  * Describes the properties of a zod type that can be used to apply to `Field`
@@ -138,6 +148,31 @@ type Options<T extends ZodType> = IModelFromZodOptions<T> & {
  * @return {ZodTypeInfo} The {@link ZodTypeInfo} of the property.
  */
 export function getFieldInfoFromZod<T extends ZodType>(
+  key: string,
+  prop: ZodType,
+  options: Options<T>,
+  direction: Direction
+): ZodTypeInfo {
+  if (_getFieldInfoDepth >= MAX_ZOD_DEPTH) {
+    throw new Error(
+      `getFieldInfoFromZod exceeded MAX_ZOD_DEPTH (${MAX_ZOD_DEPTH}) at Key("${key}"). `
+      + `This usually indicates a ZodLazy chain that doesn't resolve through a `
+      + `ZodObject (whose generated class would have terminated the recursion via `
+      + `the class cache).`
+    )
+  }
+
+  _getFieldInfoDepth++
+  try {
+    return getFieldInfoFromZodInner(key, prop, options, direction)
+  } finally {
+    // Always decrement the depth counter, even if it errors out so if something
+    // catches the error and continues, it won't be permanently stuck at max depth.
+    _getFieldInfoDepth--
+  }
+}
+
+function getFieldInfoFromZodInner<T extends ZodType>(
   key: string,
   prop: ZodType,
   options: Options<T>,

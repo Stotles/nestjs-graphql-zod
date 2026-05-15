@@ -149,6 +149,37 @@ describe('getZodObjectName', () => {
       })
     })
 
+    describe('cyclic ZodLazy', () => {
+      it('should resolve a non-cyclic ZodLazy reused as siblings', () => {
+        // Path-tracked, not history-tracked: a lazy appearing twice in
+        // sibling positions is not a cycle and must resolve on both visits.
+        const shared = z.lazy(() => z.string())
+        expect(getZodObjectName(z.union([shared, shared]), direction)).toBe('String | String')
+      })
+
+      it('should return "Unknown" on a self-referential ZodLazy cycle', () => {
+        let self: z.ZodType
+        self = z.lazy(() => self)
+        expect(getZodObjectName(self, direction)).toBe('Unknown')
+      })
+
+      it('should return "Unknown" on mutually recursive ZodLazy schemas', () => {
+        let a: z.ZodType, b: z.ZodType
+        a = z.lazy(() => b)
+        b = z.lazy(() => a)
+        expect(getZodObjectName(a, direction)).toBe('Unknown')
+      })
+
+      it('should handle a recursive ZodLazy without stack-overflow', () => {
+        // Each getter() call produces a brand-new ZodLazy, so the visited Set
+        // never trips — the depth cap is the only thing protecting us.
+        function infiniteLoop(): z.ZodType {
+          return z.lazy(() => infiniteLoop())
+        }
+        expect(() => getZodObjectName(infiniteLoop(), direction)).toThrow(/MAX_ZOD_DEPTH/)
+      })
+    })
+
     it('should return "Unknown" for unrecognized types', () => {
       expect(getZodObjectName(z.unknown(), direction)).toBe('Unknown')
     })

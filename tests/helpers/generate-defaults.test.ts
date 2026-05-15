@@ -69,4 +69,27 @@ describe('generateDefaults', () => {
   it('should not surface array element defaults as the array default', () => {
     expect(generateDefaults(z.array(z.string().default('hello')))).toBeUndefined()
   })
+
+  it('should peel through deeply stacked wrappers', () => {
+    let schema: z.ZodType = z.string().default('deep')
+    for (let i = 0; i < 25; i++) {
+      schema = schema.optional().readonly().nullable() as any
+    }
+    expect(generateDefaults(schema)).toBe('deep')
+  })
+
+  it('should terminate on a self-referential ZodLazy cycle', () => {
+    let self: z.ZodType
+    self = z.lazy(() => self)
+    expect(generateDefaults(self)).toBeUndefined()
+  })
+
+  it('should handle a recursive ZodLazy without stack-overflow', () => {
+    // Each getter() call produces a brand-new ZodLazy, so the visited Set
+    // never trips — the depth cap is the only thing protecting us.
+    function infiniteLoop(): z.ZodType {
+      return z.lazy(() => infiniteLoop())
+    }
+    expect(() => generateDefaults(infiniteLoop())).toThrow(/MAX_ZOD_DEPTH/)
+  })
 })

@@ -25,6 +25,7 @@ import {
   ZodUnion,
 } from 'zod'
 
+import { MAX_ZOD_DEPTH } from './constants'
 import { isZodInstance } from './is-zod-instance'
 import { toTitleCase } from './to-title-case'
 
@@ -38,6 +39,9 @@ export type Direction = 'input' | 'output'
 /**
  * Builds the corresponding zod type name.
  *
+ * Detects `ZodLazy` cycles and resolves them to `'Unknown'`; throws if a
+ * cycle is encountered which cannot be handled.
+ *
  * @export
  * @param {ZodType} instance The zod type instance.
  * @param {Direction} direction Whether to resolve the input (client-sent) or output (server-produced) side of transforming schemas like `ZodPipe`.
@@ -46,13 +50,35 @@ export type Direction = 'input' | 'output'
  * @__PURE__
  */
 export function getZodObjectName(instance: ZodType, direction: Direction): string {
+  return getZodObjectNameInner(instance, direction, new Set(), 0)
+}
+
+/**
+ * Internal implementation of `getZodObjectName`, the wrapper is required to support
+ * cycle detection without exposing the additional parameters on the public API.
+ */
+function getZodObjectNameInner(
+  instance: ZodType,
+  direction: Direction,
+  visited: Set<ZodType>,
+  depth: number,
+): string {
+  if (depth >= MAX_ZOD_DEPTH) {
+    throw new Error(
+      `getZodObjectName exceeded MAX_ZOD_DEPTH (${MAX_ZOD_DEPTH}). This usually `
+      + `indicates a ZodLazy getter that manufactures a fresh schema on each call, `
+      + `preventing identity-based cycle detection.`
+    )
+  }
+  const next = depth + 1
+
   if (isZodInstance(ZodArray, instance)) {
-    const innerName = getZodObjectName(instance.element as ZodType, direction)
+    const innerName = getZodObjectNameInner(instance.element as ZodType, direction, visited, next)
     return `Array<${innerName}>`
   }
 
   if (isZodInstance(ZodOptional, instance)) {
-    const innerName = getZodObjectName(instance.unwrap() as ZodType, direction)
+    const innerName = getZodObjectNameInner(instance.unwrap() as ZodType, direction, visited, next)
     return `Optional<${innerName}>`
   }
 
@@ -61,24 +87,35 @@ export function getZodObjectName(instance: ZodType, direction: Direction): strin
     // `z.string().optional().nonoptional()` resolves to `String` rather than `Optional<String>`.
     const inner = instance.unwrap() as ZodType
     const target = isZodInstance(ZodOptional, inner) ? inner.unwrap() as ZodType : inner
-    return getZodObjectName(target, direction)
+    return getZodObjectNameInner(target, direction, visited, next)
   }
 
   if (isZodInstance(ZodPipe, instance)) {
-    return getZodObjectName(resolvePipeTarget(instance, direction), direction)
+    return getZodObjectNameInner(resolvePipeTarget(instance, direction), direction, visited, next)
   }
   if (isZodInstance(ZodLazy, instance)) {
-    return getZodObjectName(instance._def.getter() as ZodType, direction)
+    // `visited` is path-tracked, not history-tracked: we remove the entry on
+    // the way out so a non-cyclic shared lazy referenced twice in sibling
+    // positions (e.g. `z.union([shared, shared])`) still resolves on both
+    // visits. Only a lazy that appears on the *current* recursion path is
+    // treated as a cycle.
+    if (visited.has(instance)) return 'Unknown'
+    visited.add(instance)
+    try {
+      return getZodObjectNameInner(instance._def.getter() as ZodType, direction, visited, next)
+    } finally {
+      visited.delete(instance)
+    }
   }
 
   if (isZodInstance(ZodDefault, instance)) {
-    return getZodObjectName(instance._def.innerType as ZodType, direction)
+    return getZodObjectNameInner(instance._def.innerType as ZodType, direction, visited, next)
   }
   if (isZodInstance(ZodReadonly, instance)) {
-    return getZodObjectName(instance._def.innerType as ZodType, direction)
+    return getZodObjectNameInner(instance._def.innerType as ZodType, direction, visited, next)
   }
   if (isZodInstance(ZodPrefault, instance)) {
-    return getZodObjectName(instance._def.innerType as ZodType, direction)
+    return getZodObjectNameInner(instance._def.innerType as ZodType, direction, visited, next)
   }
 
   if (isZodInstance(ZodEnum, instance)) {
@@ -110,8 +147,8 @@ export function getZodObjectName(instance: ZodType, direction: Direction): strin
   }
 
   if (isZodInstance(ZodRecord, instance)) {
-    const keyName = getZodObjectName(instance._def.keyType as ZodType, direction)
-    const valueName = getZodObjectName(instance._def.valueType as ZodType, direction)
+    const keyName = getZodObjectNameInner(instance._def.keyType as ZodType, direction, visited, next)
+    const valueName = getZodObjectNameInner(instance._def.valueType as ZodType, direction, visited, next)
     return `Record<${keyName}, ${valueName}>`
   }
 
@@ -139,11 +176,11 @@ export function getZodObjectName(instance: ZodType, direction: Direction): strin
   }
 
   if (isZodInstance(ZodUnion, instance)) {
-    return (instance.options as ZodType[]).map(o => getZodObjectName(o, direction)).join(' | ')
+    return (instance.options as ZodType[]).map(o => getZodObjectNameInner(o, direction, visited, next)).join(' | ')
   }
 
   if (isZodInstance(ZodNullable, instance)) {
-    const innerName = getZodObjectName(instance._def.innerType as ZodType, direction)
+    const innerName = getZodObjectNameInner(instance._def.innerType as ZodType, direction, visited, next)
     return `Nullable<${innerName}>`
   }
 

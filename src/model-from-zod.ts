@@ -7,7 +7,7 @@ import type { ZodObject, ZodError, ZodType, output } from 'zod'
 import { ObjectType, ObjectTypeOptions } from '@nestjs/graphql'
 
 import { extractNameAndDescription, parseShape } from './helpers'
-import { ZodObjectKey } from './helpers/constants'
+import { MAX_ZOD_DEPTH, ZodObjectKey } from './helpers/constants'
 import { describeZodSchema } from './helpers/describe-zod-schema'
 import { Direction } from './helpers/get-zod-object-name'
 
@@ -169,6 +169,34 @@ type Options<T extends ZodType>
 // and `@nestjs/graphql` rejects the schema at build time.
 let _generatedClasses: { input: WeakMap<ZodType, Type>; output: WeakMap<ZodType, Type> } | undefined
 
+// Tracks nested invocation depth of `modelFromZodBase`. The class cache catches
+// recursive schemas where the same Zod instance is re-encountered, this counter
+// catches the extreme cases where something produces a fresh Zod instance on
+// each call, bypassing the cache and causing infinite recursion.
+let _modelFromZodDepth = 0
+
+/**
+ * Exposes the current `modelFromZodBase` recursion depth for tests that need
+ * to assert the counter is restored after both clean returns and error
+ * unwinds. Not part of the public API.
+ *
+ * @internal
+ */
+export function _getModelFromZodDepth(): number {
+  return _modelFromZodDepth
+}
+
+/**
+ * Exposes the cached generated class (if any) for a given schema and
+ * direction so tests can verify the cache is populated on success and
+ * evicted on failure. Not part of the public API.
+ *
+ * @internal
+ */
+export function _getCachedClass(schema: ZodType, direction: Direction): Type | undefined {
+  return _generatedClasses?.[direction].get(schema)
+}
+
 /**
  * Creates a dynamic class which will be compatible with GraphQL, from a
  * `zod` model.
@@ -199,36 +227,60 @@ export function modelFromZodBase<
 
   if (previousRecord) return previousRecord
 
-  const { name, description } = extractNameAndDescription(zodInput, options)
-  let { keepZodObject = false } = options
-
-  class DynamicZodModel {}
-  const prototype = DynamicZodModel.prototype
-
-  decorator(DynamicZodModel)
-
-  if (keepZodObject) {
-    Object.defineProperty(prototype, ZodObjectKey, {
-      value: { ...zodInput },
-      configurable: false,
-      writable: false,
-    })
+  if (_modelFromZodDepth >= MAX_ZOD_DEPTH) {
+    throw new Error(
+      `modelFromZodBase exceeded MAX_ZOD_DEPTH (${MAX_ZOD_DEPTH}). This usually `
+      + `indicates a ZodLazy getter that manufactures a fresh schema on each call, `
+      + `preventing the class cache from terminating the recursion.`
+    )
   }
 
-  const parsed = parseShape(zodInput, {
-    ...options,
-    name,
-    description,
-    getDecorator: options.getDecorator,
-  }, direction)
+  _modelFromZodDepth++
+  try {
+    const { name, description } = extractNameAndDescription(zodInput, options)
+    let { keepZodObject = false } = options
 
-  for (const { descriptor, key, decorateFieldProperty } of parsed) {
-    Object.defineProperty(prototype, key, descriptor)
-    decorateFieldProperty(prototype, key)
+    class DynamicZodModel {}
+    const prototype = DynamicZodModel.prototype
+
+    decorator(DynamicZodModel)
+
+    if (keepZodObject) {
+      Object.defineProperty(prototype, ZodObjectKey, {
+        value: { ...zodInput },
+        configurable: false,
+        writable: false,
+      })
+    }
+
+    // Register before recursing into fields so recursive references via
+    // `z.lazy(() => self)` resolve to this class instead of re-entering
+    // and stack-overflowing. Evict on error so we don't leave a half-built
+    // class in the cache for subsequent callers.
+    cache[direction].set(zodInput, DynamicZodModel)
+    try {
+      const parsed = parseShape(zodInput, {
+        ...options,
+        name,
+        description,
+        getDecorator: options.getDecorator,
+      }, direction)
+
+      for (const { descriptor, key, decorateFieldProperty } of parsed) {
+        Object.defineProperty(prototype, key, descriptor)
+        decorateFieldProperty(prototype, key)
+      }
+    } catch (err) {
+      cache[direction].delete(zodInput)
+      throw err
+    }
+
+    return DynamicZodModel as Type<output<T>>
+  } finally {
+    // Always decrement the depth counter, even if it errors out so if something
+    // catches the error and continues, it won't be permanently stuck at max depth.
+    _modelFromZodDepth--
   }
-
-  cache[direction].set(zodInput, DynamicZodModel)
-  return DynamicZodModel as Type<output<T>>
 }
 
 /**

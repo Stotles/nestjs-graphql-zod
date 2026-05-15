@@ -222,6 +222,16 @@ describe('getFieldInfoFromZod', () => {
           .toThrow(/ZodLazy.*did not return a valid ZodType/)
       })
 
+      it('should handle a recursive ZodLazy without stack-overflow', () => {
+        // Self-referential lazy at a field position (not wrapped in a
+        // ZodObject) — modelFromZodBase's class cache never sees it, so the
+        // depth cap here is the only safeguard against stack overflow.
+        let self: z.ZodType
+        self = z.lazy(() => self)
+        expect(() => getFieldInfoFromZod('cycle', self, defaultOptions, direction))
+          .toThrow(/MAX_ZOD_DEPTH/)
+      })
+
       it('should unwrap ZodNonOptional and clear isOptional', () => {
         const info = getFieldInfoFromZod('name', z.string().optional().nonoptional(), defaultOptions, direction)
         expect(info.type).toBe(String)

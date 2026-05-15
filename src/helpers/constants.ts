@@ -9,6 +9,18 @@ let registerCount = 0
 export const ZodObjectKey = Symbol('[[DynamicZodModelSource]]')
 
 /**
+ * Hard cap on Zod schema recursion / wrapper-stack depth. There are cycle-detection
+ * mechanisms in this package which should be able to detect simpler cycles and
+ * handle them gracefully, but this cap is a last-resort safeguard to cleanly fail
+ * when cycle detection fails and to prevent JS OOM errors which are hard to debug.
+ *
+ * Real-world schemas top out at single-digit wrapper depths and a few levels
+ * of nested objects, 128 should be more than sufficient headroom for even the
+ * most complex schemas.
+ */
+export const MAX_ZOD_DEPTH = 128
+
+/**
  * Gets the total registered class count.
  *
  * @export
