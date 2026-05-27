@@ -1,10 +1,11 @@
 import 'reflect-metadata'
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, expectTypeOf } from 'vitest'
 import { z } from 'zod'
 import {
   unwrapNestedZod,
   unwrapNestedZodRecursively,
   iterateZodLayers,
+  type UnwrapNestedZod,
 } from '../../src/helpers/unwrap'
 import { isZodInstance } from '../../src/helpers/is-zod-instance'
 
@@ -64,6 +65,20 @@ describe('unwrapNestedZod', () => {
     expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
   })
 
+  it('should unwrap ZodReadonly', () => {
+    const inner = z.string()
+    const wrapped = inner.readonly()
+    const unwrapped = unwrapNestedZod(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
+  it('should unwrap ZodPrefault', () => {
+    const inner = z.string()
+    const wrapped = inner.prefault('seed')
+    const unwrapped = unwrapNestedZod(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
   it('should return same value for non-wrapping types', () => {
     const str = z.string()
     expect(unwrapNestedZod(str)).toBe(str)
@@ -83,9 +98,37 @@ describe('unwrapNestedZodRecursively', () => {
     expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
   })
 
+  it('should recursively unwrap readonly + prefault + optional', () => {
+    const wrapped = z.string().prefault('x').readonly().optional()
+    const unwrapped = unwrapNestedZodRecursively(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
   it('should handle already-unwrapped types', () => {
     const str = z.string()
     expect(unwrapNestedZodRecursively(str)).toBe(str)
+  })
+
+  it('should recursively unwrap ZodPipe to its input', () => {
+    const wrapped = z.string().transform(val => val.length).pipe(z.number())
+    const unwrapped = unwrapNestedZodRecursively(wrapped)
+    expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
+  })
+
+  describe("type safety", () => {
+    it('should statically extract the input side of a ZodPipe', () => {
+      // The `pipe` overload requires B's input to match A's output, so we use
+      // string -> string here. UnwrapNestedZod<ZodPipe<A, B>> should be A.
+      const pipe = z.string().pipe(z.string())
+      type Unwrapped = UnwrapNestedZod<typeof pipe>
+      expectTypeOf<Unwrapped>().toMatchTypeOf<z.ZodString>()
+    })
+
+    it('should statically extract the input side of a transform pipe', () => {
+      const wrapped = z.string().pipe(z.transform((v) => v.length))
+      type Unwrapped = UnwrapNestedZod<typeof wrapped>
+      expectTypeOf<Unwrapped>().toMatchTypeOf<z.ZodString>()
+    })
   })
 })
 

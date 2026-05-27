@@ -308,7 +308,7 @@ import { ZodArgs } from 'nestjs-graphql-zod'
 
 const RequestSchema = zod.object({
   username: zod.string().min(5).max(20).describe('The username of the request owner'),
-  email: zod.string().email().describe('The email of the user'),
+  email: zod.email().describe('The email of the user'),
   changes: zod.object({
     themeSelection: zod.enum([ 'light', 'dark' ]).describe('The theme type'),
     permissions: zod.object({
@@ -423,7 +423,7 @@ class ExampleResolver() {
   inlineExample(
     @ZodArgs(zod.number().gt(10).array()) numberArray: number[],
     @ZodArgs(zod.record(zod.number())) dictionary: Record<string, number>,
-    @ZodArgs(zod.string().url().optional()) urlString?: string,
+    @ZodArgs(zod.url().optional()) urlString?: string,
   ) {
     // Here the @ZodArgs(Schema) decorator is inlined and will produce
     // corresponding schema file. If the types are primitives, there will
@@ -435,6 +435,20 @@ class ExampleResolver() {
   }
 }
 ```
+
+If your zod schema is using advanced features such as `z.transform()`, the library might not be
+able to automatically infer the GraphQL type. In such cases, you can provide an explicit hint
+using zod's `.meta()` system:
+
+```ts
+const transformedSchema = zod.preprocess((val) => String(val), zod.string()).transform((str) => str.toUpperCase()).meta({
+  graphqlTypeInput: () => String, // Hint for input direction
+  graphqlTypeOutput: () => String, // Hint for output direction
+});
+```
+
+You only need to provide the hint for the direction(s) that the library cannot infer on its own.
+This allows you to use complex zod schemas while still ensuring proper GraphQL type generation.
 
 # Support
 

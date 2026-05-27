@@ -1,0 +1,11 @@
+{
+  // Not "tsconfig.test.json" in the root so editors such as VSCode pick it up for the tests folder.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "noEmit": true,
+    "types": ["vitest/globals"]
+  },
+  "include": [".", "../src", "../vitest.config.ts"],
+  "exclude": ["node_modules", "dist"]
+}

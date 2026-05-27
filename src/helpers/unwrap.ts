@@ -6,7 +6,9 @@ import {
   ZodNullable,
   ZodOptional,
   ZodPipe,
+  ZodPrefault,
   ZodPromise,
+  ZodReadonly,
   ZodSet,
   ZodTransform,
   ZodType,
@@ -25,10 +27,12 @@ import { isZodInstance } from './is-zod-instance'
  * - {@link ZodLazy}
  * - {@link ZodNullable}
  * - {@link ZodOptional}
- * - {@link ZodPipe}
+ * - {@link ZodPipe} (unwraps to the input side)
+ * - {@link ZodPrefault}
  * - {@link ZodPromise}
+ * - {@link ZodReadonly}
  * - {@link ZodSet}
- * - {@link ZodTransform}
+ * - {@link ZodTransform} (no inner type — returns T)
  *
  * @template T The zod type.
  */
@@ -36,11 +40,17 @@ export type UnwrapNestedZod<T extends ZodType>
   = T extends ZodArray<infer I> ? I : (
     T extends ZodOptional<infer I> ? I : (
       T extends ZodDefault<infer I> ? I : (
-        T extends ZodNullable<infer I> ? I : (
-          T extends ZodCatch<infer I> ? I : (
-            T extends ZodPromise<infer I> ? I : (
-              T extends ZodSet<infer I> ? I : (
-                T extends ZodLazy<infer I> ? I : T
+        T extends ZodPrefault<infer I> ? I : (
+          T extends ZodReadonly<infer I> ? I : (
+            T extends ZodNullable<infer I> ? I : (
+              T extends ZodCatch<infer I> ? I : (
+                T extends ZodPromise<infer I> ? I : (
+                  T extends ZodSet<infer I> ? I : (
+                    T extends ZodLazy<infer I> ? I : (
+                      T extends ZodPipe<infer I, any> ? I : T
+                    )
+                  )
+                )
               )
             )
           )
@@ -74,9 +84,11 @@ export function unwrapNestedZod<T extends ZodType>(input: T): UnwrapNestedZod<T>
   if (isZodInstance(ZodArray, input)) return input.element as UnwrapNestedZod<T>
   if (isZodInstance(ZodCatch, input)) return input._def.innerType as UnwrapNestedZod<T>
   if (isZodInstance(ZodDefault, input)) return input._def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance(ZodPrefault, input)) return input._def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance(ZodReadonly, input)) return input._def.innerType as UnwrapNestedZod<T>
   if (isZodInstance(ZodPipe, input)) return input._def.in as UnwrapNestedZod<T>
   if (isZodInstance(ZodTransform, input)) return input as unknown as UnwrapNestedZod<T>
-  if (isZodInstance(ZodLazy, input)) return (input._def as any).getter() as UnwrapNestedZod<T>
+  if (isZodInstance(ZodLazy, input)) return input._def.getter() as UnwrapNestedZod<T>
   if (isZodInstance(ZodNullable, input)) return input.unwrap() as UnwrapNestedZod<T>
   if (isZodInstance(ZodOptional, input)) return input.unwrap() as UnwrapNestedZod<T>
   if (isZodInstance(ZodPromise, input)) return input.unwrap() as UnwrapNestedZod<T>

@@ -1,4 +1,4 @@
-import type { DynamicZodModelClass, GraphQLMDF } from './types'
+import type { DynamicZodModelClass, TypeOptionInputMethodDecoratorFactory } from './types'
 import type { WrapWithZodOptions } from './zod-options-wrapper.interface'
 import type { TypeProvider } from '../types/type-provider'
 import type { EnumProvider } from '../types/enum-provider'
@@ -24,7 +24,7 @@ let DEFAULT_ENUM_PROVIDER: EnumProvider | undefined
  * @param {(string | BaseOptions<T> | undefined)} nameOrOptions The name or
  * the options.
  *
- * @param {GraphQLMDF<BaseTypeOptions>} graphqlDecoratorFactory The actual
+ * @param {TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>} graphqlDecoratorFactory The actual
  * decorator factory function.
  *
  * @param {DynamicZodModelClass<T>} model The dynamically built model class from
@@ -35,7 +35,7 @@ let DEFAULT_ENUM_PROVIDER: EnumProvider | undefined
 export function MethodWithZodModel<T extends ZodObject>(
   input: T,
   nameOrOptions: string | BaseOptions<T> | undefined,
-  graphqlDecoratorFactory: GraphQLMDF<BaseTypeOptions>,
+  graphqlDecoratorFactory: TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>,
   model: DynamicZodModelClass<T>
 ): MethodDecorator {
   return function _ModelWithZod(
@@ -84,7 +84,7 @@ export function MethodWithZodModel<T extends ZodObject>(
  * @param {(string | BaseOptions<T> | undefined)} nameOrOptions The name or
  * the options.
  *
- * @param {GraphQLMDF<BaseTypeOptions>} graphqlDecoratorFactory The actual
+ * @param {TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>} graphqlDecoratorFactory The actual
  * decorator factory function.
  *
  * @return {MethodDecorator} A method decorator.
@@ -92,7 +92,7 @@ export function MethodWithZodModel<T extends ZodObject>(
 export function MethodWithZod<T extends ZodObject>(
   input: T,
   nameOrOptions: string | BaseOptions<T> | undefined,
-  graphqlDecoratorFactory: GraphQLMDF<BaseTypeOptions>
+  graphqlDecoratorFactory: TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>
 ) {
   let zodOptions: IModelFromZodOptions<T> | undefined
 

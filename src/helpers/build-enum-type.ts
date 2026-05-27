@@ -32,12 +32,18 @@ export function buildEnumType<T extends ZodObject>(
 
   if (isZodInstance(ZodEnum, type)) {
     const Enum = type.enum
+    // Zod v4 unified z.nativeEnum into z.enum. Detect TS numeric enums by
+    // their reverse-mapping signature — a numeric-string key whose string
+    // value maps back to the original number — so callers can treat them
+    // like the old ZodNativeEnum. A plain numeric-valued object like
+    // `z.enum({ A: 1, B: 2 })` has no such pair and is not native.
+    const isNative = hasNumericEnumReverseMappings(Enum)
 
     let enumProvider = options.getEnumType ?? getDefaultEnumProvider()
 
     if (typeof enumProvider === 'function') {
       const replacement = enumProvider(Enum, {
-        isNative: false,
+        isNative,
         name: String(key),
         parentName: options.name,
         description: type.description,
@@ -48,9 +54,14 @@ export function buildEnumType<T extends ZodObject>(
       }
     }
 
-    const incompatibleKey = getFirstIncompatibleEnumKey(Enum)
-    if (incompatibleKey) {
-      throw new Error(`The value of the Key("${incompatibleKey}") of ${options.name}.${String(key)} Enum was not valid`)
+    if (!isNative) {
+      // The string-key validator only applies to plain string enums; native
+      // numeric enums legitimately have numeric values and digit-string
+      // reverse-mapping keys, both of which registerEnumType handles.
+      const incompatibleKey = getFirstIncompatibleEnumKey(Enum)
+      if (incompatibleKey) {
+        throw new Error(`The value of the Key("${incompatibleKey}") of ${options.name}.${String(key)} Enum was not valid`)
+      }
     }
 
     const parentName = options.name
@@ -78,12 +89,21 @@ export function buildEnumType<T extends ZodObject>(
   }
 }
 
+function hasNumericEnumReverseMappings(Enum: Record<string, string | number>): boolean {
+  for (const key in Enum) {
+    if (!/^\d+$/.test(key)) continue
+    const value = Enum[key]
+    if (typeof value !== 'string') continue
+    if (Enum[value] === Number(key)) return true
+  }
+  return false
+}
+
 function getFirstIncompatibleEnumKey(input: Record<string, string | number>) {
   const digitTest = /^\s*?\d/
 
   for (const key in input) {
     const value = input[ key ]
-    if (typeof value !== 'string') return key
-    if (digitTest.test(value)) return key
+    if (typeof value === 'string' && digitTest.test(value)) return key
   }
 }

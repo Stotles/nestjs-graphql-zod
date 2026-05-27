@@ -50,4 +50,49 @@ describe('isZodInstance', () => {
     expect(isZodInstance(z.ZodNumber, z.string())).toBe(false)
     expect(isZodInstance(z.ZodObject, z.string())).toBe(false)
   })
+
+  it('should identify base classes like ZodType', () => {
+    // ZodType is the abstract base — every schema instance should match.
+    expect(isZodInstance(z.ZodType, z.string())).toBe(true)
+    expect(isZodInstance(z.ZodType, z.object({ a: z.string() }))).toBe(true)
+    expect(isZodInstance(z.ZodType, z.array(z.number()))).toBe(true)
+  })
+
+  it('should return false for unrelated objects', () => {
+    class CompletelyUnrelated {}
+    expect(isZodInstance(z.ZodString, new CompletelyUnrelated())).toBe(false)
+  })
+
+  it('should return false for objects which share a constructor name but are not actually instances', () => {
+    class ZodString {}
+    const fake = new ZodString()
+    expect(fake instanceof z.ZodString).toBe(false)
+    expect(isZodInstance(z.ZodString, fake)).toBe(false)
+  })
+
+  it('should not crash on bare objects', () => {
+    expect(isZodInstance(z.ZodString, Object.create(null))).toBe(false)
+  })
+
+  describe('cross-copy zod', () => {
+    // When a process ends up with two copies of zod (e.g. a CJS/ESM split,
+    // or duplicate versions in the dep tree), the two copies export
+    // distinct class identities. zod v4 sidesteps that by overriding
+    // `Symbol.hasInstance` to check `_zod.traits` — a Set of class names
+    // (concrete and abstract) the instance satisfies. Trait names are
+    // plain strings, so `instanceof` works across the boundary.
+    it('should identify schemas built from a separate zod copy', () => {
+      // The top-of-file `import` goes through the ESM loader (./index.js),
+      // while `require()` resolves to the CJS build (./index.cjs) — two
+      // distinct files so the classes do not share identity.
+      const zCopy = require('zod') as typeof z
+      expect(zCopy.ZodString).not.toBe(z.ZodString)
+      expect(zCopy.ZodType).not.toBe(z.ZodType)
+
+      const stringFromOtherCopy = zCopy.string()
+      expect(isZodInstance(z.ZodString, stringFromOtherCopy)).toBe(true)
+      expect(isZodInstance(z.ZodType, stringFromOtherCopy)).toBe(true)
+      expect(isZodInstance(z.ZodNumber, stringFromOtherCopy)).toBe(false)
+    })
+  })
 })

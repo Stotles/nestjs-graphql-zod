@@ -2,6 +2,7 @@ import { InputType, InputTypeOptions } from '@nestjs/graphql'
 
 import { extractNameAndDescription, parseShape } from '../../helpers'
 import { ZodObjectKey } from '../../helpers/constants'
+import { describeZodSchema } from '../../helpers/describe-zod-schema'
 
 import type { ZodObject } from 'zod'
 import type { Options } from './options.inteface'
@@ -89,19 +90,26 @@ export function InputTypeWithZod<T extends ZodObject>(
       })
     }
 
-    const parsed = parseShape(input, {
-      ...zodOptions,
-      name,
-      description,
-      getDecorator(_: any, key: string) {
-        return buildInputTypeDecorator(key, inputTypeOptions)
-      },
-      getScalarTypeFor: zodOptions.getScalarTypeFor,
-    })
+    try {
+      const parsed = parseShape(input, {
+        ...zodOptions,
+        name,
+        description,
+        getDecorator(_: any, key: string) {
+          return buildInputTypeDecorator(key, inputTypeOptions)
+        },
+        getScalarTypeFor: zodOptions.getScalarTypeFor,
+      }, 'input')
 
-    for (const { descriptor, key, decorateFieldProperty } of parsed) {
-      Object.defineProperty(prototype, key as string, descriptor)
-      decorateFieldProperty(prototype, key as string)
+      for (const { descriptor, key, decorateFieldProperty } of parsed) {
+        Object.defineProperty(prototype, key, descriptor)
+        decorateFieldProperty(prototype, key)
+      }
+    } catch (err) {
+      throw new Error(
+        `InputTypeWithZod failed${describeZodSchema(input, zodOptions.name)}`,
+        { cause: err }
+      )
     }
 
     return returnValue as void

@@ -1,16 +1,25 @@
 import { Mutation, MutationOptions as MO } from '@nestjs/graphql'
 
+import { describeZodSchema } from '../../helpers/describe-zod-schema'
 import { MethodWithZod } from '../common'
 
 import type { ZodObject } from 'zod'
 import type { IModelFromZodOptions } from '../../model-from-zod'
 
-export interface MutationOptions<T extends ZodObject> extends Omit<MO, never> {
+/**
+ * Options for {@link MutationWithZod}, mirroring `@nestjs/graphql`'s
+ * {@link MO} (a discriminated union over `nullable: true | false |
+ * NullableList`) plus the library-specific `zod` field for model creation.
+ *
+ * Expressed as a type intersection so the union is preserved and TypeScript
+ * still narrows `defaultValue` based on the `nullable` member.
+ */
+export type MutationOptions<T extends ZodObject> = MO & {
   /**
    * Options for model creation from `zod`.
    *
    * @type {IModelFromZodOptions<T>}
-   * @memberof QueryOptions
+   * @memberof MutationOptions
    */
   zod?: IModelFromZodOptions<T>
 }
@@ -57,5 +66,10 @@ export function MutationWithZod<T extends ZodObject>(input: T, name: string): Me
 export function MutationWithZod<T extends ZodObject>(input: T, options: MutationOptions<T>): MethodDecorator
 
 export function MutationWithZod<T extends ZodObject>(input: T, nameOrOptions?: string | MutationOptions<T>) {
-  return MethodWithZod(input, nameOrOptions, Mutation)
+  try {
+    return MethodWithZod(input, nameOrOptions, Mutation)
+  } catch (err) {
+    const zodName = typeof nameOrOptions === 'object' ? nameOrOptions?.zod?.name : undefined
+    throw new Error(`MutationWithZod failed${describeZodSchema(input, zodName)}`, { cause: err })
+  }
 }

@@ -3,6 +3,19 @@ This file contains the changes made to the package.
 
 The sections are in descending order of the change date.
 
+## [4.0.0] - Unreleased
+### Added
+- Support for `zod` v4.
+- Improve error handling by informing which schema caused the error, not just the error message and potentially the key.
+- Allow overriding the generated GraphQL types via `.meta(...)`. This is designed to help users with complex schemas that can't be automatically mapped to a GraphQL type. See the [README](./README.md) for more details.
+
+### Changed
+- Stricter handling of zod effects.
+- `getZodObjectName`, `modelFromZodBase` & `parseShape` functions now require a `direction` parameter. This was done to correctly handle zod effects.
+
+### Removed
+- Support for `zod` v3.
+
 ## [3.3.0] - 2023-09-28
 ### Added
 - Support for `NativeEnum`s.

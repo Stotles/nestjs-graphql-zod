@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "target": "es2021",
+    "lib": ["es2021", "es2022.error"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "module": "commonjs",
     "rootDir": "./src",
     "moduleResolution": "node",
-    "baseUrl": ".",
     "declaration": true,
     "emitDeclarationOnly": false,
     "sourceMap": true,

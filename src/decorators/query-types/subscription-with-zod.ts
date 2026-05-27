@@ -3,16 +3,25 @@ import { plainToInstance } from 'class-transformer'
 import { BadRequestException } from '@nestjs/common'
 import { Subscription, SubscriptionOptions as SO } from '@nestjs/graphql'
 
+import { describeZodSchema } from '../../helpers/describe-zod-schema'
 import { IModelFromZodOptions, modelFromZod } from '../../model-from-zod'
 
 import type { ZodObject, ZodError } from 'zod'
 
-export interface SubscriptionOptions<T extends ZodObject> extends Omit<SO, never> {
+/**
+ * Options for {@link SubscriptionWithZod}, mirroring `@nestjs/graphql`'s
+ * {@link SO} (a discriminated union over `nullable: true | false |
+ * NullableList`) plus the library-specific `zod` field for model creation.
+ *
+ * Expressed as a type intersection so the union is preserved and TypeScript
+ * still narrows `defaultValue` based on the `nullable` member.
+ */
+export type SubscriptionOptions<T extends ZodObject> = SO & {
   /**
    * Options for model creation from `zod`.
    *
    * @type {IModelFromZodOptions<T>}
-   * @memberof QueryOptions
+   * @memberof SubscriptionOptions
    */
   zod?: IModelFromZodOptions<T>
 }
@@ -94,7 +103,12 @@ export function SubscriptionWithZod<T extends ZodObject>(
     zodOptions = pickedOptions.zod
   }
 
-  const model = modelFromZod(input, zodOptions)
+  let model: ReturnType<typeof modelFromZod<T, IModelFromZodOptions<T>>>
+  try {
+    model = modelFromZod(input, zodOptions)
+  } catch (err) {
+    throw new Error(`SubscriptionWithZod failed${describeZodSchema(input, zodOptions?.name)}`, { cause: err })
+  }
 
   return function _SubscriptionWithZod(
     target: any,
@@ -112,10 +126,10 @@ export function SubscriptionWithZod<T extends ZodObject>(
           .then(output => input.parseAsync(output))
           .then(output => plainToInstance(model, output))
           .catch((error: ZodError) => {
-            const messages = error.issues.reduce((prev: any, curr: any) => {
+            const messages = error.issues.reduce<Record<string, string>>((prev, curr) => {
               prev[ curr.path.join('.') ] = curr.message
               return prev
-            }, {} as any)
+            }, {})
 
             return new BadRequestException(messages)
           })
@@ -126,10 +140,10 @@ export function SubscriptionWithZod<T extends ZodObject>(
           return plainToInstance(model, parseResult.data)
         }
         else {
-          const messages = parseResult.error.issues.reduce((prev: any, curr: any) => {
+          const messages = parseResult.error.issues.reduce<Record<string, string>>((prev, curr) => {
             prev[ curr.path.join('.') ] = curr.message
             return prev
-          }, {} as any)
+          }, {})
 
           return new BadRequestException(messages)
         }
@@ -144,10 +158,13 @@ export function SubscriptionWithZod<T extends ZodObject>(
 
     if (typeof nameOrOptions === 'string') {
       if (typeof pickedOptions === 'object') {
-        decorate = Subscription(nameOrOptions, pickedOptions as any)
+        // Strip the library-specific `zod` field so it doesn't leak into
+        // Nest's GraphQL metadata. Mirrors the object-overload branch below.
+        const { zod, ...rest } = pickedOptions
+        decorate = Subscription(() => model, { ...rest, name: nameOrOptions })
       }
       else {
-        decorate = Subscription(nameOrOptions)
+        decorate = Subscription(() => model, { name: nameOrOptions })
       }
     }
     else if (typeof nameOrOptions === 'object') {

@@ -1,11 +1,20 @@
 import { Query, QueryOptions as QO } from '@nestjs/graphql'
 
+import { describeZodSchema } from '../../helpers/describe-zod-schema'
 import { MethodWithZod } from '../common'
 
 import type { ZodObject } from 'zod'
 import type { IModelFromZodOptions } from '../../model-from-zod'
 
-export interface QueryOptions<T extends ZodObject> extends Omit<QO, never> {
+/**
+ * Options for {@link QueryWithZod}, mirroring `@nestjs/graphql`'s
+ * {@link QO} (a discriminated union over `nullable: true | false |
+ * NullableList`) plus the library-specific `zod` field for model creation.
+ *
+ * Expressed as a type intersection so the union is preserved and TypeScript
+ * still narrows `defaultValue` based on the `nullable` member.
+ */
+export type QueryOptions<T extends ZodObject> = QO & {
   /**
    * Options for model creation from `zod`.
    *
@@ -57,5 +66,10 @@ export function QueryWithZod<T extends ZodObject>(input: T, name: string): Metho
 export function QueryWithZod<T extends ZodObject>(input: T, options: QueryOptions<T>): MethodDecorator
 
 export function QueryWithZod<T extends ZodObject>(input: T, nameOrOptions?: string | QueryOptions<T>) {
-  return MethodWithZod(input, nameOrOptions, Query)
+  try {
+    return MethodWithZod(input, nameOrOptions, Query)
+  } catch (err) {
+    const zodName = typeof nameOrOptions === 'object' ? nameOrOptions?.zod?.name : undefined
+    throw new Error(`QueryWithZod failed${describeZodSchema(input, zodName)}`, { cause: err })
+  }
 }
