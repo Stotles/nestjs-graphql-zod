@@ -1,6 +1,6 @@
 {
-  "name": "@meerpohl/nestjs-graphql-zod",
-  "version": "4.0.1",
+  "name": "@stotles/nestjs-graphql-zod",
+  "version": "4.0.0",
   "description": "A library for integrating zod validation objects into nestjs graphql objects.",
   "keywords": [
     "decorator",
@@ -10,15 +10,14 @@
     "validation",
     "zod"
   ],
-  "homepage": "https://github.com/Achder/nestjs-graphql-zod#readme",
+  "homepage": "https://github.com/Stotles/nestjs-graphql-zod#readme",
   "bugs": {
-    "url": "https://github.com/Achder/nestjs-graphql-zod/issues"
+    "url": "https://github.com/Stotles/nestjs-graphql-zod/issues"
   },
   "license": "MPL-2.0",
-  "author": "Thomas Meerpohl <thomas.meerpohl@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Achder/nestjs-graphql-zod.git"
+    "url": "git+https://github.com/Stotles/nestjs-graphql-zod.git"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
