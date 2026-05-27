@@ -13,9 +13,7 @@ import { getFieldInfoFromZod, ZodTypeInfo } from './get-field-info-from-zod'
 import { Direction, getZodObjectName } from './get-zod-object-name'
 import { isZodInstance } from './is-zod-instance'
 
-/**
- * An interface describing a parsed field.
- */
+/** An interface describing a parsed field. */
 export interface ParsedField {
   /**
    * The key of the parsed property.
@@ -29,7 +27,7 @@ export interface ParsedField {
    *
    * Can be used for GraphQL @{@link Field} decorator.
    *
-   * @type {*}
+   * @type {any}
    */
   fieldType: any
 
@@ -48,29 +46,28 @@ export interface ParsedField {
   decorateFieldProperty: PropertyDecorator
 }
 
-type ParseOptions<T extends ZodType>
-  = IModelFromZodOptions<T>
-  & {
-    /**
+type ParseOptions<T extends ZodType> = IModelFromZodOptions<T> & {
+  /**
    * Provides the decorator to decorate the dynamically generated class.
    *
+   * @memberof IOptions
    * @param {T} zodInput The zod input.
    * @param {string} key The name of the currently processsed property.
-   * @return {ClassDecorator} The class decorator to decorate the class.
-   * @memberof IOptions
+   * @returns {ClassDecorator} The class decorator to decorate the class.
    */
-    getDecorator?(zodInput: T, key: string): ClassDecorator
-  }
+  getDecorator?(zodInput: T, key: string): ClassDecorator
+}
 
 /**
  * Parses a zod input object with given options.
  *
- * @export
  * @template T The type of the zod object.
  * @param {T} zodInput The zod object input.
  * @param {ParseOptions<T>} options The options for the parsing.
- * @param {Direction} direction Whether the GraphQL type being built represents an input (what the client sends) or an output (what the schema produces).
- * @return {ParsedField[]} An array of {@link ParsedField}.
+ * @param {Direction} direction Whether the GraphQL type being built represents an input (what the
+ *   client sends) or an output (what the schema produces).
+ * @returns {ParsedField[]} An array of {@link ParsedField}.
+ * @export
  */
 export function parseShape<T extends ZodType>(
   zodInput: T,
@@ -78,30 +75,24 @@ export function parseShape<T extends ZodType>(
   direction: Direction,
 ): ParsedField[] {
   if (isZodInstance(ZodObject, zodInput)) {
-    return Object
-      .entries(zodInput.shape)
-      .map(([ key, value ]) => parseSingleShape(key, value as ZodType, options, direction))
+    return Object.entries(zodInput.shape).map(([key, value]) =>
+      parseSingleShape(key, value as ZodType, options, direction),
+    )
   }
 
   const parsedShape = parseSingleShape('', zodInput, options, direction)
-  return [ parsedShape ]
+  return [parsedShape]
 }
 
 /**
  * Gets the nullability of a field from type info.
  *
- * @export
  * @param {ZodTypeInfo} typeInfo The type info.
- * @return {(boolean | NullableList)} The nullability state.
+ * @returns {boolean | NullableList} The nullability state.
+ * @export
  */
 export function getNullability(typeInfo: ZodTypeInfo): boolean | NullableList {
-  const {
-    isNullable,
-    isOptional,
-    isOfArray,
-    isItemOptional,
-    isItemNullable,
-  } = typeInfo
+  const { isNullable, isOptional, isOfArray, isItemOptional, isItemNullable } = typeInfo
 
   let nullable: boolean | NullableList = isNullable || isOptional
 
@@ -109,8 +100,7 @@ export function getNullability(typeInfo: ZodTypeInfo): boolean | NullableList {
     if (isItemNullable || isItemOptional) {
       if (nullable) {
         nullable = 'itemsAndList'
-      }
-      else {
+      } else {
         nullable = 'items'
       }
     }
@@ -127,7 +117,7 @@ export function getNullability(typeInfo: ZodTypeInfo): boolean | NullableList {
  * @param {T} input The zod type input.
  * @param {ParseOptions<T>} options The options for parsing.
  * @param {Direction} direction Input vs. output side of transforming schemas.
- * @return {ParsedField} The parsed field output.
+ * @returns {ParsedField} The parsed field output.
  */
 function parseSingleShape<T extends ZodType>(
   key: string,
@@ -164,7 +154,7 @@ function parseSingleShape<T extends ZodType>(
       nullable: nullable as any,
       defaultValue,
       description,
-    })
+    }),
   }
 }
 
@@ -175,11 +165,10 @@ function parseSingleShape<T extends ZodType>(
  * @param {ZodType} input The zod type input.
  * @param {ParseOptions<ZodType>} options The parse options.
  * @param {Direction} direction Input vs. output side of transforming schemas.
- * @return {PropertyDescriptor} The property descriptor created for it,
- * if the operation was successful.
- *
- * @throws {Error} - The input was not processable and there was no
- * GraphQLScalar type provided for it.
+ * @returns {PropertyDescriptor} The property descriptor created for it, if the operation was
+ *   successful.
+ * @throws {Error} - The input was not processable and there was no GraphQLScalar type provided for
+ *   it.
  */
 function buildPropertyDescriptor(
   key: string,

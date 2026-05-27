@@ -34,7 +34,11 @@ describe('makeDecoratorFromFactory', () => {
       const sentinel: MethodDecorator = () => {}
       const factory = makeFactory(() => sentinel)
 
-      const result = makeDecoratorFromFactory('renamed', factory as unknown as Factory, StubModel as any)
+      const result = makeDecoratorFromFactory(
+        'renamed',
+        factory as unknown as Factory,
+        StubModel as any,
+      )
 
       expect(result).toBe(sentinel)
     })

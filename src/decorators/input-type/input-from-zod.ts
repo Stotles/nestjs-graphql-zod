@@ -9,11 +9,12 @@ import type { Options } from './options.inteface'
  * Returns a {@link InputTypeWithZod} decorated class from given `zod` input.
  *
  * You can use this returned dynamic class to extend your classes.
- * @export
+ *
  * @template T The type of the `zod` object input.
  * @param {T} input The `zod` object input.
- * @return {Type<output<T>>} A class that contains the properties from given
- * `zod` input, decorated with {@link InputTypeWithZod}.
+ * @returns {Type<output<T>>} A class that contains the properties from given `zod` input, decorated
+ *   with {@link InputTypeWithZod}.
+ * @export
  */
 export function inputFromZod<T extends ZodObject>(input: T): Type<output<T>>
 
@@ -21,12 +22,13 @@ export function inputFromZod<T extends ZodObject>(input: T): Type<output<T>>
  * Returns a {@link InputTypeWithZod} decorated class from given `zod` input.
  *
  * You can use this returned dynamic class to extend your classes.
- * @export
+ *
  * @template T The type of the `zod` object input.
  * @param {T} input The `zod` object input.
  * @param {Options<T>} options The options for the decorator.
- * @return {Type<output<T>>} A class that contains the properties from given
- * `zod` input, decorated with {@link InputTypeWithZod}.
+ * @returns {Type<output<T>>} A class that contains the properties from given `zod` input, decorated
+ *   with {@link InputTypeWithZod}.
+ * @export
  */
 export function inputFromZod<T extends ZodObject>(input: T, options: Options<T>): Type<output<T>>
 
@@ -34,20 +36,25 @@ export function inputFromZod<T extends ZodObject>(input: T, options: Options<T>)
  * Returns a {@link InputTypeWithZod} decorated class from given `zod` input.
  *
  * You can use this returned dynamic class to extend your classes.
- * @export
+ *
  * @template T The type of the `zod` object input.
  * @param {T} input The `zod` object input.
  * @param {string} name The name of the {@link InputType}.
  * @param {Options<T>} options The options for the decorator.
- * @return {Type<output<T>>} A class that contains the properties from given
- * `zod` input, decorated with {@link InputTypeWithZod}.
+ * @returns {Type<output<T>>} A class that contains the properties from given `zod` input, decorated
+ *   with {@link InputTypeWithZod}.
+ * @export
  */
-export function inputFromZod<T extends ZodObject>(input: T, name: string, options?: Options<T>): Type<output<T>>
+export function inputFromZod<T extends ZodObject>(
+  input: T,
+  name: string,
+  options?: Options<T>,
+): Type<output<T>>
 
 export function inputFromZod<T extends ZodObject>(
   input: T,
   nameOrOptions?: string | Options<T>,
-  options?: Options<T>
+  options?: Options<T>,
 ) {
   class DynamicZodModel {}
 

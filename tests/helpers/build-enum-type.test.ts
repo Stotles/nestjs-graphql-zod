@@ -39,14 +39,20 @@ describe('buildEnumType', () => {
   })
 
   it('should register a TS enum via z.nativeEnum (v3 legacy syntax)', () => {
-    enum Status { Active = 'active', Inactive = 'inactive' }
+    enum Status {
+      Active = 'active',
+      Inactive = 'inactive',
+    }
     const schema = z.nativeEnum(Status)
     const result = buildEnumType('status', enumTypeInfo(schema), { name: 'Task' })
     expect(result).toStrictEqual({ Active: 'active', Inactive: 'inactive' })
   })
 
   it('should register a TS enum via z.enum (v4 unified syntax)', () => {
-    enum Status { Active = 'active', Inactive = 'inactive' }
+    enum Status {
+      Active = 'active',
+      Inactive = 'inactive',
+    }
     const schema = z.enum(Status)
     const result = buildEnumType('status', enumTypeInfo(schema), { name: 'Task' })
     expect(result).toStrictEqual({ Active: 'active', Inactive: 'inactive' })
@@ -58,7 +64,10 @@ describe('buildEnumType', () => {
 
     buildEnumType('status', enumTypeInfo(schema), {
       name: 'Model',
-      getEnumType: (_enum, data) => { observed = data; return undefined },
+      getEnumType: (_enum, data) => {
+        observed = data
+        return undefined
+      },
     })
     expect(observed?.isNative).toBe(false)
     expect(observed?.parentName).toBe('Model')
@@ -66,25 +75,39 @@ describe('buildEnumType', () => {
   })
 
   it('should pass isNative=true to the provider for numeric TS enums (v3 legacy syntax)', () => {
-    enum Color { Red, Green, Blue }
+    enum Color {
+      Red,
+      Green,
+      Blue,
+    }
     const schema = z.nativeEnum(Color)
     let observed: EnumProviderData | undefined
 
     buildEnumType('color', enumTypeInfo(schema), {
       name: 'Model',
-      getEnumType: (_enum, data) => { observed = data; return undefined },
+      getEnumType: (_enum, data) => {
+        observed = data
+        return undefined
+      },
     })
     expect(observed?.isNative).toBe(true)
   })
 
   it('should pass isNative=true to the provider for numeric TS enums (v4 unified syntax)', () => {
-    enum Color { Red, Green, Blue }
+    enum Color {
+      Red,
+      Green,
+      Blue,
+    }
     const schema = z.enum(Color)
     let observed: EnumProviderData | undefined
 
     buildEnumType('color', enumTypeInfo(schema), {
       name: 'Model',
-      getEnumType: (_enum, data) => { observed = data; return undefined },
+      getEnumType: (_enum, data) => {
+        observed = data
+        return undefined
+      },
     })
     expect(observed?.isNative).toBe(true)
   })
@@ -95,7 +118,10 @@ describe('buildEnumType', () => {
 
     buildEnumType('grade', enumTypeInfo(schema), {
       name: 'Model',
-      getEnumType: (_enum, data) => { observed = data; return undefined },
+      getEnumType: (_enum, data) => {
+        observed = data
+        return undefined
+      },
     })
     expect(observed?.isNative).toBe(false)
   })
@@ -131,35 +157,50 @@ describe('buildEnumType', () => {
   })
 
   it('should accept numeric TS enums via z.nativeEnum and preserve reverse mappings', () => {
-    enum Color { Red, Green, Blue }
+    enum Color {
+      Red,
+      Green,
+      Blue,
+    }
     const schema = z.nativeEnum(Color)
     const result = buildEnumType('color', enumTypeInfo(schema), { name: 'Model' })
     expect(result).toStrictEqual({ 0: 'Red', 1: 'Green', 2: 'Blue', Red: 0, Green: 1, Blue: 2 })
   })
 
   it('should accept numeric TS enums via z.enum and preserve reverse mappings', () => {
-    enum Color { Red, Green, Blue }
+    enum Color {
+      Red,
+      Green,
+      Blue,
+    }
     const schema = z.enum(Color)
     const result = buildEnumType('color', enumTypeInfo(schema), { name: 'Model' })
     expect(result).toStrictEqual({ 0: 'Red', 1: 'Green', 2: 'Blue', Red: 0, Green: 1, Blue: 2 })
   })
 
   it('should accept mixed numeric/string enums', () => {
-    enum Mixed { A = 1, B = 'b' }
+    enum Mixed {
+      A = 1,
+      B = 'b',
+    }
     const schema = z.nativeEnum(Mixed)
     const result = buildEnumType('mixed', enumTypeInfo(schema), { name: 'Model' })
     expect(result).toStrictEqual({ 1: 'A', A: 1, B: 'b' })
   })
 
   it('should accept arrays of numeric TS enums', () => {
-    enum Color { Red, Green, Blue }
+    enum Color {
+      Red,
+      Green,
+      Blue,
+    }
     const schema = z.nativeEnum(Color)
     const result = buildEnumType('colors', enumArrayTypeInfo(schema), { name: 'Model' })
     expect(result).toStrictEqual([{ 0: 'Red', 1: 'Green', 2: 'Blue', Red: 0, Green: 1, Blue: 2 }])
   })
 
   it('should reject incompatible string enum keys', () => {
-    const Bad = { 'good': 'good', 'bad': '0starts-with-digit' }
+    const Bad = { good: 'good', bad: '0starts-with-digit' }
     const schema = z.enum(Bad)
     expect(() => buildEnumType('flag', enumTypeInfo(schema), { name: 'Model' })).toThrow()
   })

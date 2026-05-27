@@ -11,156 +11,144 @@ import { MAX_ZOD_DEPTH, ZodObjectKey } from './helpers/constants'
 import { describeZodSchema } from './helpers/describe-zod-schema'
 import { Direction } from './helpers/get-zod-object-name'
 
-export interface IModelFromZodOptions<T extends ZodType>
-  extends ObjectTypeOptions {
+export interface IModelFromZodOptions<T extends ZodType> extends ObjectTypeOptions {
   /**
    * The name of the model class in GraphQL schema.
    *
-   * @type {string}
    * @memberof IModelFromZodOptions
+   * @type {string}
    */
   name?: string
 
   /**
    * Indicates whether or not the property should be parsed safely.
    *
-   * If this property is set to `true`, then `safeParse` will be used and
-   * if parsing is failed, the {@link onParseError} function will be called
-   * to provide a replace value.
+   * If this property is set to `true`, then `safeParse` will be used and if parsing is failed, the
+   * {@link onParseError} function will be called to provide a replace value.
    *
-   * @type {boolean}
    * @memberof IModelFromZodOptions
+   * @type {boolean}
    * @see {@link doNotThrow}
    */
   safe?: boolean
 
   /**
-   * Indicates if the parsing should throw when no value could be set
-   * when there was an error during parsing.
+   * Indicates if the parsing should throw when no value could be set when there was an error during
+   * parsing.
    *
-   * If this property is set to `true`, then the value will be `undefined`
-   * if data could not be parsed successfully.
+   * If this property is set to `true`, then the value will be `undefined` if data could not be
+   * parsed successfully.
    *
-   * @type {boolean}
    * @memberof IModelFromZodOptions
+   * @type {boolean}
    */
   doNotThrow?: boolean
 
   /**
-   * Indicates whether or not the zod object should be kept inside the
-   * dynamically generated class.
+   * Indicates whether or not the zod object should be kept inside the dynamically generated class.
    *
-   * If this property is set to `true`, use {@link getZodObject} function
-   * to get the source object from a target.
+   * If this property is set to `true`, use {@link getZodObject} function to get the source object
+   * from a target.
    *
-   * @type {boolean}
    * @memberof IModelFromZodOptions
+   * @type {boolean}
    */
   keepZodObject?: boolean
 
   /**
-   * Indicates whether or not the successfully parsed objects should
-   * be converted to their dynamically built class instances.
+   * Indicates whether or not the successfully parsed objects should be converted to their
+   * dynamically built class instances.
    *
-   * @type {boolean}
    * @memberof IModelFromZodOptions
    * @default true
+   * @type {boolean}
    */
   parseToInstance?: boolean
 
   /**
-   * A function that can be used for providing a default value for a property
-   * that had an error during parsing.
+   * A function that can be used for providing a default value for a property that had an error
+   * during parsing.
    *
+   * @memberof IModelFromZodOptions
    * @template K The type of the key.
    * @param {K} key The key that could not be parsed.
    * @param {T[ K ]} newValue The new value that is tried to be parsed.
-   * @param {(T[ K ] | undefined)} oldValue The previous value of the property.
+   * @param {T[K] | undefined} oldValue The previous value of the property.
    * @param {ZodError<T[ K ]>} error The error thrown during parsing.
-   * @return {*}  {(T[ keyof T ] | void)} An alternative fallback value to
-   * replace and dismiss the error, or nothing.
-   *
-   * @memberof IModelFromZodOptions
+   * @returns {any} {(T[ keyof T ] | void)} An alternative fallback value to replace and dismiss the
+   *   error, or nothing.
    */
   onParseError?<K extends keyof output<T>>(
     key: K,
-    newValue: output<T>[ K ],
-    oldValue: output<T>[ K ] | undefined,
-    error: ZodError
-  ): output<T>[ keyof output<T> ] | void
+    newValue: output<T>[K],
+    oldValue: output<T>[K] | undefined,
+    error: ZodError,
+  ): output<T>[keyof output<T>] | void
 
   /**
-   * A function that can be used for providing parse options for
-   * a key during the parsing process (on set).
-   *
-   * @template K The type of the key.
-   * @param {K} key The key that is being parsed.
-   * @param {(T[ K ] | undefined)} previousValue The previously set value.
-   * @return {Record<string, unknown>} The parse options for the
-   * current parsing stage.
+   * A function that can be used for providing parse options for a key during the parsing process
+   * (on set).
    *
    * @memberof IModelFromZodOptions
+   * @template K The type of the key.
+   * @param {K} key The key that is being parsed.
+   * @param {T[K] | undefined} previousValue The previously set value.
+   * @returns {Record<string, unknown>} The parse options for the
+   * current parsing stage.
    */
   onParsing?<K extends keyof output<T>>(
     key: K,
-    previousValue: output<T>[ K ] | undefined
+    previousValue: output<T>[K] | undefined,
   ): Record<string, unknown>
 
   /**
    * Gets the scalar type for given type name.
    *
    * @param {string} typeName The type name corresponding to the zod object.
-   * @return {GraphQLScalarType} The scalar type for the zod object.
+   * @returns {GraphQLScalarType} The scalar type for the zod object.
    */
   getScalarTypeFor?: TypeProvider
 
   /**
-   * Provides a name for nested classes when they are created dynamically from
-   * object properties of zod types.
-   *
-   * @param {string} parentName The parent class name.
-   * @param {string} propertyKey The property key/name.
-   * @return {(string | undefined)} The name to set for the class. If
-   * any value returned other than a `string`, the class name will be generated
-   * automatically.
+   * Provides a name for nested classes when they are created dynamically from object properties of
+   * zod types.
    *
    * @memberof IModelFromZodOptions
-  */
+   * @param {string} parentName The parent class name.
+   * @param {string} propertyKey The property key/name.
+   * @returns {string | undefined} The name to set for the class. If any value returned other than a
+   *   `string`, the class name will be generated automatically.
+   */
   provideNameForNestedClass?(parentName: string, propertyKey: string): string | undefined
 
   /**
    * Gets an enum type for given information.
    *
-   * Use this function to prevent creating different enums in GraphQL schema
-   * if you are going to use same values in different places.
-   *
-   * @param {string | undefined} name The parent name that contains the enum
-   * type.
-   * @param {string} key The property name of the enum.
-   * @param {(Record<string, string | number>)} enumObject The enum object
-   * that is extracted from the zod.
-   * @return {(Record<string, string | number> | undefined)} The enum
-   * that will be used instead of creating a new one. If `undefined` is
-   * returned, then a new enum will be created.
+   * Use this function to prevent creating different enums in GraphQL schema if you are going to use
+   * same values in different places.
    *
    * @memberof IModelFromZodOptions
+   * @param {string | undefined} name The parent name that contains the enum type.
+   * @param {string} key The property name of the enum.
+   * @param {Record<string, string | number>} enumObject The enum object that is extracted from the
+   *   zod.
+   * @returns {Record<string, string | number> | undefined} The enum that will be used instead of
+   *   creating a new one. If `undefined` is returned, then a new enum will be created.
    */
   getEnumType?: EnumProvider
 }
 
-type Options<T extends ZodType>
-  = IModelFromZodOptions<T>
-  & {
-    /**
-     * Provides the decorator to decorate the dynamically generated class.
-     *
-     * @param {T} zodInput The zod input.
-     * @param {string} key The name of the currently processsed property.
-     * @return {ClassDecorator} The class decorator to decorate the class.
-     * @memberof IOptions
-     */
-    getDecorator?(zodInput: T, key: string): ClassDecorator
-  }
+type Options<T extends ZodType> = IModelFromZodOptions<T> & {
+  /**
+   * Provides the decorator to decorate the dynamically generated class.
+   *
+   * @memberof IOptions
+   * @param {T} zodInput The zod input.
+   * @param {string} key The name of the currently processsed property.
+   * @returns {ClassDecorator} The class decorator to decorate the class.
+   */
+  getDecorator?(zodInput: T, key: string): ClassDecorator
+}
 
 // Cache of generated classes, partitioned by direction. The same Zod schema
 // instance can legitimately back both a GraphQL output (`@ObjectType`) and
@@ -176,9 +164,8 @@ let _generatedClasses: { input: WeakMap<ZodType, Type>; output: WeakMap<ZodType,
 let _modelFromZodDepth = 0
 
 /**
- * Exposes the current `modelFromZodBase` recursion depth for tests that need
- * to assert the counter is restored after both clean returns and error
- * unwinds. Not part of the public API.
+ * Exposes the current `modelFromZodBase` recursion depth for tests that need to assert the counter
+ * is restored after both clean returns and error unwinds. Not part of the public API.
  *
  * @internal
  */
@@ -187,9 +174,8 @@ export function _getModelFromZodDepth(): number {
 }
 
 /**
- * Exposes the cached generated class (if any) for a given schema and
- * direction so tests can verify the cache is populated on success and
- * evicted on failure. Not part of the public API.
+ * Exposes the cached generated class (if any) for a given schema and direction so tests can verify
+ * the cache is populated on success and evicted on failure. Not part of the public API.
  *
  * @internal
  */
@@ -198,40 +184,37 @@ export function _getCachedClass(schema: ZodType, direction: Direction): Type | u
 }
 
 /**
- * Creates a dynamic class which will be compatible with GraphQL, from a
- * `zod` model.
+ * Creates a dynamic class which will be compatible with GraphQL, from a `zod` model.
  *
- * @export
  * @template T The type of the zod input.
  * @param {T} zodInput The zod object input.
- * @param {IModelFromZodOptions<T>} [options={}] The options for model creation.
+ * @param {IModelFromZodOptions<T>} [options={}] The options for model creation. Default is `{}`
  * @param {ClassDecorator} decorator The decorator to apply to the generated class.
- * @param {Direction} direction Whether the GraphQL type being built represents an input (what the client sends) or an output (what the schema produces).
- * @return {Type} A class that represents the `zod` object and also
+ * @param {Direction} direction Whether the GraphQL type being built represents an input (what the
+ *   client sends) or an output (what the schema produces).
+ * @returns {Type} A class that represents the `zod` object and also
  * compatible with `GraphQL`.
+ * @export
  */
-export function modelFromZodBase<
-  T extends ZodObject,
-  O extends Options<T>
->(
+export function modelFromZodBase<T extends ZodObject, O extends Options<T>>(
   zodInput: T,
   options: O = {} as O,
   decorator: ClassDecorator,
   direction: Direction,
 ): Type<output<T>> {
-  const cache = _generatedClasses ??= {
+  const cache = (_generatedClasses ??= {
     input: new WeakMap<ZodType, Type>(),
     output: new WeakMap<ZodType, Type>(),
-  }
+  })
   const previousRecord = cache[direction].get(zodInput)
 
   if (previousRecord) return previousRecord
 
   if (_modelFromZodDepth >= MAX_ZOD_DEPTH) {
     throw new Error(
-      `modelFromZodBase exceeded MAX_ZOD_DEPTH (${MAX_ZOD_DEPTH}). This usually `
-      + `indicates a ZodLazy getter that manufactures a fresh schema on each call, `
-      + `preventing the class cache from terminating the recursion.`
+      `modelFromZodBase exceeded MAX_ZOD_DEPTH (${MAX_ZOD_DEPTH}). This usually ` +
+        `indicates a ZodLazy getter that manufactures a fresh schema on each call, ` +
+        `preventing the class cache from terminating the recursion.`,
     )
   }
 
@@ -259,12 +242,16 @@ export function modelFromZodBase<
     // class in the cache for subsequent callers.
     cache[direction].set(zodInput, DynamicZodModel)
     try {
-      const parsed = parseShape(zodInput, {
-        ...options,
-        name,
-        description,
-        getDecorator: options.getDecorator,
-      }, direction)
+      const parsed = parseShape(
+        zodInput,
+        {
+          ...options,
+          name,
+          description,
+          getDecorator: options.getDecorator,
+        },
+        direction,
+      )
 
       for (const { descriptor, key, decorateFieldProperty } of parsed) {
         Object.defineProperty(prototype, key, descriptor)
@@ -284,34 +271,32 @@ export function modelFromZodBase<
 }
 
 /**
- * Creates a dynamic class which will be compatible with GraphQL, from a
- * `zod` model.
+ * Creates a dynamic class which will be compatible with GraphQL, from a `zod` model.
  *
- * @export
  * @template T The type of the zod input.
  * @param {T} zodInput The zod object input.
- * @param {IModelFromZodOptions<T>} [options={}] The options for model creation.
- * @return {Type} A class that represents the `zod` object and also
+ * @param {IModelFromZodOptions<T>} [options={}] The options for model creation. Default is `{}`
+ * @returns {Type} A class that represents the `zod` object and also
  * compatible with `GraphQL`.
+ * @export
  */
-export function modelFromZod<
-  T extends ZodObject,
-  O extends IModelFromZodOptions<T>
-  >(zodInput: T, options: O = {} as O): Type<output<T>> {
+export function modelFromZod<T extends ZodObject, O extends IModelFromZodOptions<T>>(
+  zodInput: T,
+  options: O = {} as O,
+): Type<output<T>> {
   const { name, description } = extractNameAndDescription(zodInput, options)
 
   const decorator = ObjectType(name, {
     description,
     isAbstract: zodInput.isNullable() || zodInput.isOptional(),
-    ...options
+    ...options,
   })
 
   try {
     return modelFromZodBase(zodInput, options, decorator, 'output')
   } catch (err) {
-    throw new Error(
-      `Failed to create GraphQL type${describeZodSchema(zodInput, options.name)}`,
-      { cause: err }
-    )
+    throw new Error(`Failed to create GraphQL type${describeZodSchema(zodInput, options.name)}`, {
+      cause: err,
+    })
   }
 }

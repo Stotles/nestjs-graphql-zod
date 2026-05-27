@@ -19,10 +19,12 @@ describe('ZodArgs', () => {
   })
 
   it('should create a parameter decorator for an object schema', () => {
-    const schema = z.object({
-      name: z.string(),
-      age: z.number(),
-    }).describe('ArgsInput: test args')
+    const schema = z
+      .object({
+        name: z.string(),
+        age: z.number(),
+      })
+      .describe('ArgsInput: test args')
 
     const decorator = ZodArgs(schema, 'input', {})
     expect(typeof decorator).toBe('function')

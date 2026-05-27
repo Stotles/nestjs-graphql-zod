@@ -20,10 +20,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "exclude": [
-    "node_modules",
-    "tests",
-    "dist",
-    "vitest.config.ts"
-  ]
+  "exclude": ["node_modules", "tests", "dist", "vitest.config.ts"]
 }

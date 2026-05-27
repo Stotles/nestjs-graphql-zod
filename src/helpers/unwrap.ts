@@ -36,28 +36,30 @@ import { isZodInstance } from './is-zod-instance'
  *
  * @template T The zod type.
  */
-export type UnwrapNestedZod<T extends ZodType>
-  = T extends ZodArray<infer I> ? I : (
-    T extends ZodOptional<infer I> ? I : (
-      T extends ZodDefault<infer I> ? I : (
-        T extends ZodPrefault<infer I> ? I : (
-          T extends ZodReadonly<infer I> ? I : (
-            T extends ZodNullable<infer I> ? I : (
-              T extends ZodCatch<infer I> ? I : (
-                T extends ZodPromise<infer I> ? I : (
-                  T extends ZodSet<infer I> ? I : (
-                    T extends ZodLazy<infer I> ? I : (
-                      T extends ZodPipe<infer I, any> ? I : T
-                    )
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-    )
-  )
+export type UnwrapNestedZod<T extends ZodType> =
+  T extends ZodArray<infer I>
+    ? I
+    : T extends ZodOptional<infer I>
+      ? I
+      : T extends ZodDefault<infer I>
+        ? I
+        : T extends ZodPrefault<infer I>
+          ? I
+          : T extends ZodReadonly<infer I>
+            ? I
+            : T extends ZodNullable<infer I>
+              ? I
+              : T extends ZodCatch<infer I>
+                ? I
+                : T extends ZodPromise<infer I>
+                  ? I
+                  : T extends ZodSet<infer I>
+                    ? I
+                    : T extends ZodLazy<infer I>
+                      ? I
+                      : T extends ZodPipe<infer I, any>
+                        ? I
+                        : T
 
 /**
  * Unwraps any given zod type recursively.
@@ -65,19 +67,23 @@ export type UnwrapNestedZod<T extends ZodType>
  * @template T The zod type.
  * @template Depth The maximum depth to unwrap, default `5`.
  */
-export type UnwrapNestedZodRecursive<T extends ZodType, Depth extends number = 5>
-  = [ Prev[ Depth ] ] extends [ never ] ? never : [ T ] extends [ UnwrapNestedZod<T> ] ? T : (
-    UnwrapNestedZod<T> extends ZodType ? UnwrapNestedZodRecursive<UnwrapNestedZod<T>, Prev[ Depth ]> : UnwrapNestedZod<T>
-  )
+export type UnwrapNestedZodRecursive<T extends ZodType, Depth extends number = 5> = [
+  Prev[Depth],
+] extends [never]
+  ? never
+  : [T] extends [UnwrapNestedZod<T>]
+    ? T
+    : UnwrapNestedZod<T> extends ZodType
+      ? UnwrapNestedZodRecursive<UnwrapNestedZod<T>, Prev[Depth]>
+      : UnwrapNestedZod<T>
 
 /**
  * Unwraps the zod object one level.
  *
- * @export
  * @template T The type of the input.
  * @param {T} input The zod input.
- * @return {UnwrapNestedZod<T>} The unwrapped zod instance.
- *
+ * @returns {UnwrapNestedZod<T>} The unwrapped zod instance.
+ * @export
  * @__PURE__
  */
 export function unwrapNestedZod<T extends ZodType>(input: T): UnwrapNestedZod<T> {
@@ -99,18 +105,16 @@ export function unwrapNestedZod<T extends ZodType>(input: T): UnwrapNestedZod<T>
 /**
  * Unwraps the zob object recursively.
  *
- * @export
  * @template T The type of the input.
  * @template Depth The maximum depth for the recursion, `5` by default.
  * @param {T} input The zod input.
- * @return {UnwrapNestedZodRecursive<T, Depth>} The unwrapped zod instance.
- *
+ * @returns {UnwrapNestedZodRecursive<T, Depth>} The unwrapped zod instance.
+ * @export
  * @__PURE__
  */
-export function unwrapNestedZodRecursively<
-  T extends ZodType,
-  Depth extends number = 5
->(input: T): UnwrapNestedZodRecursive<T, Depth> {
+export function unwrapNestedZodRecursively<T extends ZodType, Depth extends number = 5>(
+  input: T,
+): UnwrapNestedZodRecursive<T, Depth> {
   let current = input as ZodType
 
   for (const layer of iterateZodLayers(input)) {
@@ -123,9 +127,9 @@ export function unwrapNestedZodRecursively<
 /**
  * Iterates the zod layers by unwrapping the values.
  *
- * @export
  * @template T The input zod type.
  * @param {T} input The zod input.
+ * @export
  */
 export function* iterateZodLayers<T extends ZodType>(input: T) {
   let current = input as ZodType
