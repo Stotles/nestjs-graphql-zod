@@ -103,7 +103,7 @@ export function unwrapNestedZod<T extends ZodType>(input: T): UnwrapNestedZod<T>
 }
 
 /**
- * Unwraps the zob object recursively.
+ * Unwraps the zod object recursively.
  *
  * @template T The type of the input.
  * @template Depth The maximum depth for the recursion, `5` by default.
