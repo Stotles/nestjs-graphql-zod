@@ -1,6 +1,7 @@
 # nestjs-graphql-zod
 
-**THIS IS A FORK THAT I MADE OUT OF NECCASSITY**
+<a href="https://www.npmjs.com/package/@stotles/nestjs-graphql-zod"><img src="https://img.shields.io/npm/dw/%40stotles%2Fnestjs-graphql-zod.svg" alt="npm"></a>
+<a href="https://www.npmjs.com/package/@stotles/nestjs-graphql-zod"><img src="https://img.shields.io/npm/v/%40stotles%2Fnestjs-graphql-zod.svg" alt="npm"></a>
 
 **Use `zod` validation objects in your GraphQL actions!**
 
@@ -449,13 +450,3 @@ const transformedSchema = zod.preprocess((val) => String(val), zod.string()).tra
 
 You only need to provide the hint for the direction(s) that the library cannot infer on its own.
 This allows you to use complex zod schemas while still ensuring proper GraphQL type generation.
-
-# Support
-
-To support the project, you can send donations to following addresses:
-
-```md
-- Bitcoin : bc1qtut2ss8udkr68p6k6axd0na6nhvngm5dqlyhtn
-- Bitcoin Cash: qzmmv43ztae0tfsjx8zf4wwnq3uk6k7zzgcfr9jruk
-- Ether : 0xf542BED91d0218D9c195286e660da2275EF8eC84
-```
