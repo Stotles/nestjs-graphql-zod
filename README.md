@@ -1,6 +1,7 @@
 # nestjs-graphql-zod
 
-**THIS IS A FORK THAT I MADE OUT OF NECCASSITY**
+<a href="https://www.npmjs.com/package/nestjs-graphql-zod"><img src="https://img.shields.io/npm/dw/nestjs-graphql-zod.svg" alt="npm"></a>
+<a href="https://www.npmjs.com/package/nestjs-graphql-zod"><img src="https://img.shields.io/npm/v/nestjs-graphql-zod.svg" alt="npm"></a>
 
 **Use `zod` validation objects in your GraphQL actions!**
 
@@ -455,7 +456,7 @@ This allows you to use complex zod schemas while still ensuring proper GraphQL t
 To support the project, you can send donations to following addresses:
 
 ```md
-- Bitcoin : bc1qtut2ss8udkr68p6k6axd0na6nhvngm5dqlyhtn
+- Bitcoin.    : bc1qtut2ss8udkr68p6k6axd0na6nhvngm5dqlyhtn
 - Bitcoin Cash: qzmmv43ztae0tfsjx8zf4wwnq3uk6k7zzgcfr9jruk
-- Ether : 0xf542BED91d0218D9c195286e660da2275EF8eC84
+- Ether       : 0xf542BED91d0218D9c195286e660da2275EF8eC84
 ```
