@@ -11,56 +11,54 @@ import {
 } from '@nestjs/graphql'
 import { NestFactory } from '@nestjs/core'
 import { SubscriptionWithZod } from '../src/decorators/query-types/subscription-with-zod'
-import {
-  lexicographicSortSchema,
-  printSchema,
-  type GraphQLSchema,
-} from 'graphql'
+import { lexicographicSortSchema, printSchema, type GraphQLSchema } from 'graphql'
 
 import { modelFromZod } from '../src/model-from-zod'
-import {
-  inputFromZod,
-  MutationWithZod,
-  QueryWithZod,
-  ZodArgs,
-} from '../src'
+import { inputFromZod, MutationWithZod, QueryWithZod, ZodArgs } from '../src'
 
 // All schemas used by the resolvers below. Defined once so each generated
 // model class is created once.
 const TaskStatus = z
   .enum(['active', 'completed', 'archived'])
   .describe('TaskStatus: lifecycle of a task')
-const UserStatus = z
-  .enum(['active', 'inactive']) // Purposefully missing a description to test ClassFromZod_x_StatusEnum_y naming of nested enums
+const UserStatus = z.enum(['active', 'inactive']) // Purposefully missing a description to test ClassFromZod_x_StatusEnum_y naming of nested enums
 
-const Task = z.object({
-  id: z.string(),
-  title: z.string(),
-  description: z.string().optional(),
-  done: z.boolean().default(false),
-  priority: z.number().int().default(0),
-  status: TaskStatus,
-}).describe('Task: a unit of work')
+const Task = z
+  .object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    done: z.boolean().default(false),
+    priority: z.number().int().default(0),
+    status: TaskStatus,
+  })
+  .describe('Task: a unit of work')
 
-const TaskInput = z.object({
-  title: z.string(),
-  description: z.string().optional(),
-  status: TaskStatus,
-}).describe('TaskInput: input for creating a task')
+const TaskInput = z
+  .object({
+    title: z.string(),
+    description: z.string().optional(),
+    status: TaskStatus,
+  })
+  .describe('TaskInput: input for creating a task')
 
 // Flat filter used as a parameter argument. ZodArgs registers its input
 // schema via inputFromZod, which today doesn't recurse into nested
 // ZodObjects (those would need their own @InputType registration), so the
 // schemas exposed via @ZodArgs are kept primitive on purpose.
-const UserFilter = z.object({
-  search: z.string().optional(),
-  minAge: z.number().int().optional(),
-}).describe('UserFilter: filter parameters for the user query')
+const UserFilter = z
+  .object({
+    search: z.string().optional(),
+    minAge: z.number().int().optional(),
+  })
+  .describe('UserFilter: filter parameters for the user query')
 
-const Profile = z.object({
-  email: z.email(),
-  homepage: z.url().optional(),
-}).describe('Profile: external identifiers for a user')
+const Profile = z
+  .object({
+    email: z.email(),
+    homepage: z.url().optional(),
+  })
+  .describe('Profile: external identifiers for a user')
 
 const UserFull = z.object({
   id: z.uuid(),
@@ -72,16 +70,16 @@ const UserFull = z.object({
   status: UserStatus,
 })
 
-const User = UserFull
-  .omit({ status: true })
-  .describe('User: an account holder')
+const User = UserFull.omit({ status: true }).describe('User: an account holder')
 
-const AuditLog = z.object({
-  id: z.string(),
-  action: z.string(),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime().optional(),
-}).describe('AuditLog: a record of an action taken in the system')
+const AuditLog = z
+  .object({
+    id: z.string(),
+    action: z.string(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime().optional(),
+  })
+  .describe('AuditLog: a record of an action taken in the system')
 
 const WrappedDefaultsInput = z.object({
   plain: z.string().default('plain_value'),
@@ -95,8 +93,13 @@ const TaskModel = modelFromZod(Task, { name: 'Task' })
 const UserModel = modelFromZod(User, { name: 'User' })
 const UserFullModel = modelFromZod(UserFull)
 const TaskInputModel = inputFromZod(TaskInput, { name: 'TaskInput' })
-const AuditLogModel = modelFromZod(AuditLog, { name: 'AuditLog', description: 'A record of an action taken in the system' })
-const WrappedDefaultsInputModel = inputFromZod(WrappedDefaultsInput, { name: 'WrappedDefaultsInput' })
+const AuditLogModel = modelFromZod(AuditLog, {
+  name: 'AuditLog',
+  description: 'A record of an action taken in the system',
+})
+const WrappedDefaultsInputModel = inputFromZod(WrappedDefaultsInput, {
+  name: 'WrappedDefaultsInput',
+})
 
 @Resolver(() => TaskModel)
 class TaskResolver {
@@ -117,7 +120,7 @@ class TaskResolver {
     return {
       id: '3',
       title: 'listed',
-      description: "a task description",
+      description: 'a task description',
       done: true,
       priority: -5,
       status: 'archived',
@@ -125,9 +128,7 @@ class TaskResolver {
   }
 
   @MutationWithZod(Task)
-  createTask(
-    @Args('input', { type: () => TaskInputModel }) _input: unknown,
-  ) {
+  createTask(@Args('input', { type: () => TaskInputModel }) _input: unknown) {
     return {
       id: '2',
       title: 'created',
@@ -142,9 +143,7 @@ class TaskResolver {
 @Resolver(() => UserModel)
 class UserResolver {
   @QueryWithZod(User)
-  user(
-    @ZodArgs(UserFilter) _filter: ZodArgs.Of<typeof UserFilter>,
-  ) {
+  user(@ZodArgs(UserFilter) _filter: ZodArgs.Of<typeof UserFilter>) {
     return {
       id: '00000000-0000-0000-0000-000000000000',
       name: 'Alice',
@@ -167,7 +166,10 @@ class UserResolver {
     }
   }
 
-  @Query(() => UserModel, { name: 'user5', description: 'Test overriding the name and description of the query' })
+  @Query(() => UserModel, {
+    name: 'user5',
+    description: 'Test overriding the name and description of the query',
+  })
   async user3() {
     return {
       id: '054d76a6-3954-43b1-a0d3-6690834d4a8b',
@@ -229,7 +231,7 @@ beforeAll(async () => {
     UserResolver,
     AuditLogResolver,
     TaskSubscriptionResolver,
-    WrappedDefaultsResolver
+    WrappedDefaultsResolver,
   ])
   // Sorting the schema with lexicographicSortSchema so the output is stable across runs
   sortedSdl = printSchema(lexicographicSortSchema(schema))

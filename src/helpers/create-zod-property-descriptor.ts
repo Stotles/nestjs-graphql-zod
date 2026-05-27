@@ -1,27 +1,24 @@
-import {
-  output,
-  ZodType,
-} from 'zod'
+import { output, ZodType } from 'zod'
 
 import { getZodDefaultValue } from './generate-defaults'
 
 import type { IModelFromZodOptions } from '../model-from-zod'
 
 /**
- * Creates a property descriptor that provides `get` and `set` functions
- * that are using `parse` or `safeParse` methods of the `zod` library.
+ * Creates a property descriptor that provides `get` and `set` functions that are using `parse` or
+ * `safeParse` methods of the `zod` library.
  *
- * @export
  * @template T The type of the target object.
  * @param {keyof T} key The key of the property that is being created.
  * @param {ZodType} input The zod object input.
  * @param {IModelFromZodOptions<T>} opts The options.
- * @return {PropertyDescriptor} A {@link PropertyDescriptor}.
+ * @returns {PropertyDescriptor} A {@link PropertyDescriptor}.
+ * @export
  */
 export function createZodPropertyDescriptor<T extends ZodType>(
   key: string | keyof output<T>,
   input: ZodType,
-  opts: IModelFromZodOptions<T>
+  opts: IModelFromZodOptions<T>,
 ): PropertyDescriptor {
   let localVariable: any = getZodDefaultValue(input)
 
@@ -47,8 +44,7 @@ export function createZodPropertyDescriptor<T extends ZodType>(
         const result = input.safeParse(newValue, keyProps)
         if (result.success) {
           localVariable = result.data
-        }
-        else {
+        } else {
           let replaceValue: typeof localVariable
 
           if (typeof onParseError === 'function') {
@@ -56,36 +52,31 @@ export function createZodPropertyDescriptor<T extends ZodType>(
               key as keyof output<T>,
               newValue,
               localVariable,
-              result.error
+              result.error,
             )
           }
 
           if (typeof replaceValue !== 'undefined') {
             localVariable = replaceValue
-          }
-          else if (doNotThrow) {
+          } else if (doNotThrow) {
             localVariable = undefined
-          }
-          else {
+          } else {
             throw result.error
           }
         }
-      }
-      else {
+      } else {
         if (doNotThrow) {
           try {
             const result = input.parse(newValue, keyProps)
             localVariable = result
-          }
-          catch (_) {
+          } catch (_) {
             localVariable = undefined
           }
-        }
-        else {
+        } else {
           const result = input.parse(newValue, keyProps)
           localVariable = result
         }
       }
-    }
+    },
   }
 }

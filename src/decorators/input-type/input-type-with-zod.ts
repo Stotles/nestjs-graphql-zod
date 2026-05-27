@@ -12,10 +12,10 @@ import type { Options } from './options.inteface'
  *
  * Uses a `zod` object.
  *
- * @export
  * @template T The type of the zod object input.
  * @param {T} input The zod input object.
- * @return {ClassDecorator} A {@link ClassDecorator}.
+ * @returns {ClassDecorator} A {@link ClassDecorator}.
+ * @export
  */
 export function InputTypeWithZod<T extends ZodObject>(input: T): ClassDecorator
 
@@ -24,11 +24,11 @@ export function InputTypeWithZod<T extends ZodObject>(input: T): ClassDecorator
  *
  * Uses a `zod` object.
  *
- * @export
  * @template T The type of the zod object input.
  * @param {T} input The zod input object.
  * @param {Options<T>} options The options for the decorator.
- * @return {ClassDecorator} A {@link ClassDecorator}.
+ * @returns {ClassDecorator} A {@link ClassDecorator}.
+ * @export
  */
 export function InputTypeWithZod<T extends ZodObject>(input: T, options: Options<T>): ClassDecorator
 
@@ -37,19 +37,23 @@ export function InputTypeWithZod<T extends ZodObject>(input: T, options: Options
  *
  * Uses a `zod` object.
  *
- * @export
  * @template T The type of the zod object input.
  * @param {T} input The zod input object.
  * @param {string} name The name of the {@link InputType}.
  * @param {Options<T>} [options] The options for the decorator.
- * @return {ClassDecorator} A {@link ClassDecorator}.
+ * @returns {ClassDecorator} A {@link ClassDecorator}.
+ * @export
  */
-export function InputTypeWithZod<T extends ZodObject>(input: T, name: string, options?: Options<T>): ClassDecorator
+export function InputTypeWithZod<T extends ZodObject>(
+  input: T,
+  name: string,
+  options?: Options<T>,
+): ClassDecorator
 
 export function InputTypeWithZod<T extends ZodObject>(
   input: T,
   nameOrOptions?: string | Options<T>,
-  options?: Options<T>
+  options?: Options<T>,
 ): ClassDecorator {
   //#region Parameter Normalization - `name`, `zodOptions`, `inputTypeOptions`
   if (typeof nameOrOptions === 'object') {
@@ -86,30 +90,33 @@ export function InputTypeWithZod<T extends ZodObject>(
       Object.defineProperty(prototype, ZodObjectKey, {
         value: { ...input },
         configurable: false,
-        writable: false
+        writable: false,
       })
     }
 
     try {
-      const parsed = parseShape(input, {
-        ...zodOptions,
-        name,
-        description,
-        getDecorator(_: any, key: string) {
-          return buildInputTypeDecorator(key, inputTypeOptions)
+      const parsed = parseShape(
+        input,
+        {
+          ...zodOptions,
+          name,
+          description,
+          getDecorator(_: any, key: string) {
+            return buildInputTypeDecorator(key, inputTypeOptions)
+          },
+          getScalarTypeFor: zodOptions.getScalarTypeFor,
         },
-        getScalarTypeFor: zodOptions.getScalarTypeFor,
-      }, 'input')
+        'input',
+      )
 
       for (const { descriptor, key, decorateFieldProperty } of parsed) {
         Object.defineProperty(prototype, key, descriptor)
         decorateFieldProperty(prototype, key)
       }
     } catch (err) {
-      throw new Error(
-        `InputTypeWithZod failed${describeZodSchema(input, zodOptions.name)}`,
-        { cause: err }
-      )
+      throw new Error(`InputTypeWithZod failed${describeZodSchema(input, zodOptions.name)}`, {
+        cause: err,
+      })
     }
 
     return returnValue as void
@@ -121,7 +128,7 @@ export function InputTypeWithZod<T extends ZodObject>(
  *
  * @param {string} [name] The name of the property.
  * @param {InputTypeOptions} [opts] The options for the decorator.
- * @return {ClassDecorator} A decorator for the dynamic input type class.
+ * @returns {ClassDecorator} A decorator for the dynamic input type class.
  */
 export function buildInputTypeDecorator(name?: string, opts?: InputTypeOptions): ClassDecorator {
   if (typeof opts === 'object') {

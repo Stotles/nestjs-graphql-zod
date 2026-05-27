@@ -46,7 +46,7 @@ describe('unwrapNestedZod', () => {
   })
 
   it('should unwrap ZodPipe to its input', () => {
-    const wrapped = z.string().transform(val => val.length)
+    const wrapped = z.string().transform((val) => val.length)
     const unwrapped = unwrapNestedZod(wrapped)
     expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
   })
@@ -110,12 +110,15 @@ describe('unwrapNestedZodRecursively', () => {
   })
 
   it('should recursively unwrap ZodPipe to its input', () => {
-    const wrapped = z.string().transform(val => val.length).pipe(z.number())
+    const wrapped = z
+      .string()
+      .transform((val) => val.length)
+      .pipe(z.number())
     const unwrapped = unwrapNestedZodRecursively(wrapped)
     expect(isZodInstance(z.ZodString, unwrapped)).toBe(true)
   })
 
-  describe("type safety", () => {
+  describe('type safety', () => {
     it('should statically extract the input side of a ZodPipe', () => {
       // The `pipe` overload requires B's input to match A's output, so we use
       // string -> string here. UnwrapNestedZod<ZodPipe<A, B>> should be A.

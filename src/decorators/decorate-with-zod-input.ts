@@ -11,26 +11,20 @@ type Fn = (...args: any) => any
 /**
  * Decorates a method with given zod validation object.
  *
- * @export
  * @template T The type of the zod validation object.
  * @template F The type of the function that will be replaced.
- * @param {Function} originalFunction The original function which will be
- * replaced.
- *
+ * @param {Function} originalFunction The original function which will be replaced.
  * @param {T} input The zod validation object.
- * @param {DynamicZodModelClass<T>} model The dynamically built zod class that
- * has the validations installed.
- *
- * @return {F}
+ * @param {DynamicZodModelClass<T>} model The dynamically built zod class that has the validations
+ *   installed.
+ * @returns {F}
+ * @export
  */
-export function decorateWithZodInput<
-  T extends ZodObject,
-  F extends Fn = Fn
->(
+export function decorateWithZodInput<T extends ZodObject, F extends Fn = Fn>(
   originalFunction: F,
   input: T,
   model: DynamicZodModelClass<T>,
-  options?: BaseOptions<T>
+  options?: BaseOptions<T>,
 ) {
   return function _modelWithZod(this: any, ...args: Parameters<F>) {
     const result = originalFunction.apply(this, args)
@@ -44,23 +38,20 @@ export function decorateWithZodInput<
 
     if (result instanceof Promise) {
       return result
-        .then(output => input.parseAsync(output))
-        .then(output => parseToInstance ? plainToInstance(model, output) : output)
+        .then((output) => input.parseAsync(output))
+        .then((output) => (parseToInstance ? plainToInstance(model, output) : output))
         .catch((error: Error | ZodError) => {
           if (error instanceof ZodError) {
             throw new BadRequestException(error.issues)
-          }
-          else {
+          } else {
             throw error
           }
         })
-    }
-    else {
+    } else {
       const parseResult = input.safeParse(result)
       if (parseResult.success) {
         return parseToInstance ? plainToInstance(model, parseResult.data) : parseResult.data
-      }
-      else {
+      } else {
         throw new BadRequestException(parseResult.error.issues)
       }
     }

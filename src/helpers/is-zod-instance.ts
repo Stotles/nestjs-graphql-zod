@@ -4,15 +4,16 @@ import type { Type } from '@nestjs/common'
 /**
  * Checks whether the given `input` is instance of given `zodClass`.
  *
- * @export
  * @template T The class type.
  * @param {T} zodClass The zod class to test against.
  * @param {Object} input The value to check.
- * @return {input is InstanceType<T>} `true` if `input` is an instance of `zodClass`, otherwise `false`.
+ * @returns {input is InstanceType<T>} `true` if `input` is an instance of `zodClass`, otherwise
+ *   `false`.
+ * @export
  */
 export function isZodInstance<T extends Type<ZodType>>(
   zodClass: T,
-  input: Object
+  input: Object,
 ): input is InstanceType<T> {
   // zod v4 tags every schema instance with `_zod.traits` — a Set of class
   // names (concrete and abstract) the instance satisfies — and overrides

@@ -96,23 +96,16 @@ They take `zod` object and validate the input with given `zod` object.
 ### Simple
 
 ```ts
-import * as zod from "zod";
+import * as zod from 'zod'
 
 const UserZod = zod
   .object({
-    name: zod.string().describe("The name of the user"),
-    age: zod.number().int().gt(10).describe("The age of the user."),
-    fields: zod
-      .string()
-      .optional()
-      .array()
-      .optional()
-      .describe("The fields of the user"),
-    sortBy: zod
-      .enum(["asc", "desc"])
-      .describe("The sorting parameter of user."),
+    name: zod.string().describe('The name of the user'),
+    age: zod.number().int().gt(10).describe('The age of the user.'),
+    fields: zod.string().optional().array().optional().describe('The fields of the user'),
+    sortBy: zod.enum(['asc', 'desc']).describe('The sorting parameter of user.'),
   })
-  .describe("ExampleUser: Represents an example user instance.");
+  .describe('ExampleUser: Represents an example user instance.')
 
 class UserResolver {
   @QueryWithZod(UserZod)
@@ -122,11 +115,11 @@ class UserResolver {
     // be thrown.
 
     return {
-      name: "User Name",
+      name: 'User Name',
       age: 15,
-      fields: ["Field 1", "Field 2"],
-      sortBy: "asc",
-    };
+      fields: ['Field 1', 'Field 2'],
+      sortBy: 'asc',
+    }
   }
 }
 ```
@@ -172,36 +165,27 @@ enum ExampleUser_SortByEnum_0 {
 ### Nested Object
 
 ```ts
-import * as zod from "zod";
+import * as zod from 'zod'
 
 const UserZod = zod
   .object({
-    name: zod.string().describe("The name of the user"),
-    age: zod.number().int().gt(10).describe("The age of the user."),
-    fields: zod
-      .string()
-      .optional()
-      .array()
-      .optional()
-      .describe("The fields of the user"),
-    sortBy: zod
-      .enum(["asc", "desc"])
-      .describe("The sorting parameter of user."),
+    name: zod.string().describe('The name of the user'),
+    age: zod.number().int().gt(10).describe('The age of the user.'),
+    fields: zod.string().optional().array().optional().describe('The fields of the user'),
+    sortBy: zod.enum(['asc', 'desc']).describe('The sorting parameter of user.'),
     settings: zod
       .object({
-        darkTheme: zod.boolean().optional().describe("The dark theme setting"),
-        ratio: zod.number().describe("This will be float by default"),
+        darkTheme: zod.boolean().optional().describe('The dark theme setting'),
+        ratio: zod.number().describe('This will be float by default'),
         profile: zod
           .object({
-            showImage: zod
-              .boolean()
-              .describe("Indicates whether the user is showing images."),
+            showImage: zod.boolean().describe('Indicates whether the user is showing images.'),
           })
-          .describe("UserProfileSetting: Represents user profile settings."),
+          .describe('UserProfileSetting: Represents user profile settings.'),
       })
-      .describe("ExampleUserSettings: The user settings."),
+      .describe('ExampleUserSettings: The user settings.'),
   })
-  .describe("ExampleUser: Represents an example user instance.");
+  .describe('ExampleUser: Represents an example user instance.')
 
 class UserResolver {
   @QueryWithZod(UserZod)
@@ -211,10 +195,10 @@ class UserResolver {
     // be thrown.
 
     return {
-      name: "User Name",
+      name: 'User Name',
       age: 15,
-      fields: ["Field 1", "Field 2"],
-      sortBy: "asc",
+      fields: ['Field 1', 'Field 2'],
+      sortBy: 'asc',
       settings: {
         darkTheme: false,
         ratio: 2.5,
@@ -222,7 +206,7 @@ class UserResolver {
           showImage: true,
         },
       },
-    };
+    }
   }
 }
 ```
@@ -441,10 +425,13 @@ able to automatically infer the GraphQL type. In such cases, you can provide an 
 using zod's `.meta()` system:
 
 ```ts
-const transformedSchema = zod.preprocess((val) => String(val), zod.string()).transform((str) => str.toUpperCase()).meta({
-  graphqlTypeInput: () => String, // Hint for input direction
-  graphqlTypeOutput: () => String, // Hint for output direction
-});
+const transformedSchema = zod
+  .preprocess((val) => String(val), zod.string())
+  .transform((str) => str.toUpperCase())
+  .meta({
+    graphqlTypeInput: () => String, // Hint for input direction
+    graphqlTypeOutput: () => String, // Hint for output direction
+  })
 ```
 
 You only need to provide the hint for the direction(s) that the library cannot infer on its own.
