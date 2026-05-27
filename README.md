@@ -1,5 +1,8 @@
 # nestjs-graphql-zod
 
+<a href="https://www.npmjs.com/package/@meerpohl/nestjs-graphql-zod"><img src="https://img.shields.io/npm/dw/%40meerpohl%2Fnestjs-graphql-zod.svg" alt="npm"></a>
+<a href="https://www.npmjs.com/package/@meerpohl/nestjs-graphql-zod"><img src="https://img.shields.io/npm/v/%40meerpohl%2Fnestjs-graphql-zod.svg" alt="npm"></a>
+
 **THIS IS A FORK THAT I MADE OUT OF NECCASSITY**
 
 **Use `zod` validation objects in your GraphQL actions!**
