@@ -13,7 +13,7 @@ import { iterateZodLayers } from './unwrap'
  *
  * @template T The type of the zod object.
  * @param {T} [input] The zod object input.
- * @return {(string | undefined)} The description of the input or `undefined.`
+ * @return {(string | undefined)} The description of the input or `undefined`.
  */
 export function getDescription<T extends ZodType>(input?: T): string | undefined {
   if (!input) return
