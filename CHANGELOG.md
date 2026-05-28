@@ -16,6 +16,7 @@ The sections are in descending order of the change date.
 
 - Stricter handling of zod effects.
 - `getZodObjectName`, `modelFromZodBase` & `parseShape` functions now require a `direction` parameter. This was done to correctly handle zod effects.
+- Minimum supported node version has increased to node 20.19
 
 ### Removed
 

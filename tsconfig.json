@@ -4,9 +4,9 @@
     "lib": ["es2021", "es2022.error"],
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "module": "commonjs",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "rootDir": "./src",
-    "moduleResolution": "node",
     "declaration": true,
     "emitDeclarationOnly": false,
     "sourceMap": true,
@@ -20,5 +20,5 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true
   },
-  "exclude": ["node_modules", "tests", "dist", "vitest.config.ts"]
+  "exclude": ["node_modules", "tests", "dist", "vitest.config.mts"]
 }

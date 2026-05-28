@@ -18,6 +18,7 @@ import {
   ZodType,
 } from 'zod'
 
+import type { Type } from '@nestjs/common'
 import { Int } from '@nestjs/graphql'
 
 import { getDefaultTypeProvider } from '../decorators/common'
@@ -381,9 +382,13 @@ function getFieldInfoFromZodInner<T extends ZodType>(
   throw new Error(`Unsupported type info of Key("${key}") of Type("${typeName}")`)
 }
 
-export module getFieldInfoFromZod {
+export namespace getFieldInfoFromZod {
+  // Explicit annotation (rather than `as const`) so the emitted declaration
+  // doesn't reference zod's internal `EnumValue` util type pulled in via
+  // `ZodEnum`'s constructor signature — TS 6 can't name that portably.
+
   /** The types that are parseable by the {@link getFieldInfoFromZod} function. */
-  export const PARSED_TYPES = [
+  export const PARSED_TYPES: readonly Type<ZodType>[] = [
     ZodArray,
     ZodBoolean,
     ZodDefault,
@@ -399,7 +404,7 @@ export module getFieldInfoFromZod {
     ZodReadonly,
     ZodString,
     ZodStringFormat,
-  ] as const
+  ]
 
   /**
    * Determines if the given zod type is parseable by the {@link getFieldInfoFromZod} function.
