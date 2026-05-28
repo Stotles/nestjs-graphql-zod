@@ -35,7 +35,7 @@ type CustomDecoratorOptions = {
    * @returns {string | undefined} The name to set for the class. If any value returned other than a
    *   `string`, the class name will be generated automatically.
    */
-  provideNameForNestedClass?(parentName: string, propertyKey: string): string | undefined
+  provideNameForNestedClass?: (parentName: string, propertyKey: string) => string | undefined
 
   /**
    * Gets an enum type for given information.
@@ -261,7 +261,7 @@ export function ZodArgs<T extends ZodType>(
   } else {
     return function _anonymousZodArgsWrapper(target, propKey, index) {
       options ??= {}
-      options!.name = `arg_${index}`
+      options.name = `arg_${index}`
       const decorator = prepareDecorator(property, options, ...pipes)
       decorator(target, propKey, index)
     }

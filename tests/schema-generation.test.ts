@@ -195,13 +195,13 @@ class TaskSubscriptionResolver {
   // String-name overload — exercises the `Subscription(nameOrOptions)` branch.
   @SubscriptionWithZod(Task, 'taskCreated')
   taskCreated() {
-    return null as any
+    return null
   }
 
   // Object-options overload — already passes `() => model`.
   @SubscriptionWithZod(Task, { name: 'taskUpdated', description: 'Fires when a task is updated' })
   taskUpdated() {
-    return null as any
+    return null
   }
 }
 
@@ -343,7 +343,7 @@ describe('end-to-end (e2e) schema generation', () => {
         email: String!
         homepage: String
       }
-      
+
       input WrappedDefaultsInput {
         optionalDefault: String = "optional_value"
         plain: String! = "plain_value"

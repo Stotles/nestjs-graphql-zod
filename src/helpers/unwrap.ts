@@ -138,7 +138,7 @@ export function* iterateZodLayers<T extends ZodType>(input: T) {
   while (unwrapped !== current) {
     yield current
     current = unwrapped
-    unwrapped = unwrapNestedZod(current) as ZodType
+    unwrapped = unwrapNestedZod(current)
   }
 
   yield current

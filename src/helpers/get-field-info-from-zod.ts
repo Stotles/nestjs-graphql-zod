@@ -121,11 +121,11 @@ type Options<T extends ZodType> = IModelFromZodOptions<T> & {
    * Provides the decorator to decorate the dynamically generated class.
    *
    * @memberof IOptions
-   * @param {T} zodInput The zod input.
+   * @param {ZodType} zodInput The zod input.
    * @param {string} key The name of the currently processsed property.
    * @returns {ClassDecorator} The class decorator to decorate the class.
    */
-  getDecorator?(zodInput: T, key: string): ClassDecorator
+  getDecorator?: (zodInput: ZodType, key: string) => ClassDecorator
 }
 
 /**
@@ -254,9 +254,9 @@ function getFieldInfoFromZodInner<T extends ZodType>(
     let model: any
     if (typeof options.getDecorator === 'function') {
       model = modelFromZodBase(
-        prop as any,
+        prop,
         nestedOptions,
-        options.getDecorator(prop as any as T, nestedOptions.name),
+        options.getDecorator(prop, nestedOptions.name),
         direction,
       )
     } else {
@@ -272,7 +272,7 @@ function getFieldInfoFromZodInner<T extends ZodType>(
             `point like \`InputTypeWithZod\`).`,
         )
       }
-      model = modelFromZod(prop as any, nestedOptions)
+      model = modelFromZod(prop, nestedOptions)
     }
 
     return {
@@ -347,7 +347,7 @@ function getFieldInfoFromZodInner<T extends ZodType>(
       )
     }
 
-    return getFieldInfoFromZod(key, lazyType as ZodType, options, direction)
+    return getFieldInfoFromZod(key, lazyType, options, direction)
   }
 
   // Fallback if type isn't directly supported
@@ -359,7 +359,7 @@ function getFieldInfoFromZodInner<T extends ZodType>(
     let isScalarType = scalarType instanceof GraphQLScalarType
 
     if (!isScalarType && scalarType) {
-      let constructor: Function = (scalarType as any)['constructor']
+      let constructor: Function = scalarType['constructor']
       if (typeof constructor === 'function' && constructor.name === GraphQLScalarType.name) {
         isScalarType = true
       }
@@ -374,7 +374,7 @@ function getFieldInfoFromZodInner<T extends ZodType>(
       }
     } else {
       throw new Error(
-        `The Scalar(Value="${scalarType}", Type="${typeof scalarType}") as Key("${key}") of Type("${typeName}") was not an instance of GraphQLScalarType.`,
+        `The Scalar(Value="${String(scalarType)}", Type="${typeof scalarType}") as Key("${key}") of Type("${typeName}") was not an instance of GraphQLScalarType.`,
       )
     }
   }

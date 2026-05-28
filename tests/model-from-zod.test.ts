@@ -201,7 +201,7 @@ describe('modelFromZod', () => {
     expect(() =>
       modelFromZodBase(
         infiniteLoop,
-        { name: 'InfiniteLoop', getDecorator: () => noop } as any,
+        { name: 'InfiniteLoop', getDecorator: () => noop },
         noop,
         'output',
       ),

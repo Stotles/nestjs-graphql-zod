@@ -13,7 +13,7 @@ import type { Type } from '@nestjs/common'
  */
 export function isZodInstance<T extends Type<ZodType>>(
   zodClass: T,
-  input: Object,
+  input: object,
 ): input is InstanceType<T> {
   // zod v4 tags every schema instance with `_zod.traits` — a Set of class
   // names (concrete and abstract) the instance satisfies — and overrides

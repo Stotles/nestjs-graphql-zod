@@ -69,7 +69,7 @@ export function createZodPropertyDescriptor<T extends ZodType>(
           try {
             const result = input.parse(newValue, keyProps)
             localVariable = result
-          } catch (_) {
+          } catch {
             localVariable = undefined
           }
         } else {

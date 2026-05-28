@@ -78,12 +78,12 @@ export interface IModelFromZodOptions<T extends ZodType> extends ObjectTypeOptio
    * @returns {any} {(T[ keyof T ] | void)} An alternative fallback value to replace and dismiss the
    *   error, or nothing.
    */
-  onParseError?<K extends keyof output<T>>(
+  onParseError?: <K extends keyof output<T>>(
     key: K,
     newValue: output<T>[K],
     oldValue: output<T>[K] | undefined,
     error: ZodError,
-  ): output<T>[keyof output<T>] | void
+  ) => output<T>[keyof output<T>] | void
 
   /**
    * A function that can be used for providing parse options for a key during the parsing process
@@ -96,10 +96,10 @@ export interface IModelFromZodOptions<T extends ZodType> extends ObjectTypeOptio
    * @returns {Record<string, unknown>} The parse options for the
    * current parsing stage.
    */
-  onParsing?<K extends keyof output<T>>(
+  onParsing?: <K extends keyof output<T>>(
     key: K,
     previousValue: output<T>[K] | undefined,
-  ): Record<string, unknown>
+  ) => Record<string, unknown>
 
   /**
    * Gets the scalar type for given type name.
@@ -119,7 +119,7 @@ export interface IModelFromZodOptions<T extends ZodType> extends ObjectTypeOptio
    * @returns {string | undefined} The name to set for the class. If any value returned other than a
    *   `string`, the class name will be generated automatically.
    */
-  provideNameForNestedClass?(parentName: string, propertyKey: string): string | undefined
+  provideNameForNestedClass?: (parentName: string, propertyKey: string) => string | undefined
 
   /**
    * Gets an enum type for given information.
@@ -143,11 +143,11 @@ type Options<T extends ZodType> = IModelFromZodOptions<T> & {
    * Provides the decorator to decorate the dynamically generated class.
    *
    * @memberof IOptions
-   * @param {T} zodInput The zod input.
+   * @param {ZodType} zodInput The zod input.
    * @param {string} key The name of the currently processsed property.
    * @returns {ClassDecorator} The class decorator to decorate the class.
    */
-  getDecorator?(zodInput: T, key: string): ClassDecorator
+  getDecorator?: (zodInput: ZodType, key: string) => ClassDecorator
 }
 
 // Cache of generated classes, partitioned by direction. The same Zod schema
@@ -230,7 +230,7 @@ export function modelFromZodBase<T extends ZodObject, O extends Options<T>>(
 
     if (keepZodObject) {
       Object.defineProperty(prototype, ZodObjectKey, {
-        value: { ...zodInput },
+        value: zodInput,
         configurable: false,
         writable: false,
       })
