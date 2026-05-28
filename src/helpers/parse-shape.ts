@@ -51,11 +51,11 @@ type ParseOptions<T extends ZodType> = IModelFromZodOptions<T> & {
    * Provides the decorator to decorate the dynamically generated class.
    *
    * @memberof IOptions
-   * @param {T} zodInput The zod input.
+   * @param {ZodType} zodInput The zod input.
    * @param {string} key The name of the currently processsed property.
    * @returns {ClassDecorator} The class decorator to decorate the class.
    */
-  getDecorator?(zodInput: T, key: string): ClassDecorator
+  getDecorator?: (zodInput: ZodType, key: string) => ClassDecorator
 }
 
 /**

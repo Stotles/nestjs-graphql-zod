@@ -26,7 +26,7 @@ describe('makeDecoratorFromFactory', () => {
       expect(factory).toHaveBeenCalledOnce()
       const [typeFunc, options] = factory.mock.calls[0]
       expect(typeof typeFunc).toBe('function')
-      expect((typeFunc as unknown as () => unknown)()).toBe(StubModel)
+      expect((typeFunc as () => unknown)()).toBe(StubModel)
       expect(options).toMatchObject({ name: 'myQuery' })
     })
 

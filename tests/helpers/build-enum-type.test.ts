@@ -211,7 +211,7 @@ describe('buildEnumType', () => {
       buildEnumType('status', enumTypeInfo(schema), { name: 'model' })
 
       expect(registerEnumType).toHaveBeenCalledOnce()
-      const [enumArg, config] = vi.mocked(registerEnumType).mock.calls[0]!
+      const [enumArg, config] = vi.mocked(registerEnumType).mock.calls[0]
       expect(enumArg).toStrictEqual({ a: 'a', b: 'b' })
       expect(config?.name).toMatch(/^Model_StatusEnum_\d+$/)
       expect(config?.description).toBe('Enum values for model.status')
@@ -221,7 +221,7 @@ describe('buildEnumType', () => {
       const schema = z.enum(['a', 'b']).describe('custom desc')
       buildEnumType('status', enumTypeInfo(schema), { name: 'Model' })
 
-      const config = vi.mocked(registerEnumType).mock.calls[0]![1]!
+      const config = vi.mocked(registerEnumType).mock.calls[0][1]!
       expect(config.name).toMatch(/^Model_StatusEnum_\d+$/)
       expect(config.description).toBe('custom desc')
     })

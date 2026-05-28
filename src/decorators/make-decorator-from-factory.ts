@@ -22,7 +22,7 @@ export function makeDecoratorFromFactory<T extends ZodObject, O extends Supporte
   if (typeof nameOrOptions === 'string') {
     decorator = decoratorFactory(() => model, { name: nameOrOptions } as O)
   } else if (typeof nameOrOptions === 'object') {
-    const { zod, ...rest } = nameOrOptions
+    const { zod: _zod, ...rest } = nameOrOptions
     decorator = decoratorFactory(() => model, rest as O)
   } else {
     decorator = decoratorFactory(() => model)

@@ -65,7 +65,7 @@ export function InputTypeWithZod<T extends ZodObject>(
     nameOrOptions = options?.name
   }
 
-  const name = nameOrOptions
+  const providedName = nameOrOptions
   let zodOptions = options?.zod
 
   let inputTypeOptions: InputTypeOptions | undefined
@@ -75,20 +75,20 @@ export function InputTypeWithZod<T extends ZodObject>(
   }
   //#endregion
 
-  const decorate = buildInputTypeDecorator(name, inputTypeOptions)
+  const decorate = buildInputTypeDecorator(providedName, inputTypeOptions)
 
   return function ZodClassDecoratorBase(target: Function) {
     zodOptions ??= {}
 
     const { prototype } = target
-    const { description, name = target.name } = extractNameAndDescription(input, zodOptions)
+    const { description, name } = extractNameAndDescription(input, zodOptions)
     const { keepZodObject = false } = zodOptions
 
     const returnValue = decorate(target)
 
     if (keepZodObject) {
       Object.defineProperty(prototype, ZodObjectKey, {
-        value: { ...input },
+        value: input,
         configurable: false,
         writable: false,
       })
