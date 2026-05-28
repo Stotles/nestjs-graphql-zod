@@ -297,7 +297,7 @@ function prepareDecorator(
   return args
 }
 
-export module ZodArgs {
+export namespace ZodArgs {
   /** A type for inferring the type of a given `zod` validation object. */
   export type Of<T extends ZodType> = output<T>
 
