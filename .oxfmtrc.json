@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [],
+  "semi": false,
+  "singleQuote": true,
+  "jsdoc": {
+    "lineWrappingStyle": "balance"
+  },
+  "commentLineStrategy": "preserve"
+}

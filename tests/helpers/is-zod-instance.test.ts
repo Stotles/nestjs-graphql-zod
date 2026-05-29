@@ -41,7 +41,10 @@ describe('isZodInstance', () => {
   })
 
   it('should identify ZodEnum from nativeEnum', () => {
-    enum Color { Red = 'red', Blue = 'blue' }
+    enum Color {
+      Red = 'red',
+      Blue = 'blue',
+    }
     expect(isZodInstance(z.ZodEnum, z.nativeEnum(Color))).toBe(true)
   })
 

@@ -49,7 +49,6 @@ describe('QueryOptions / MutationOptions / SubscriptionOptions', () => {
         false | 'items' | 'itemsAndList' | undefined
       >()
     })
-
   })
 
   describe('zod model-options field', () => {

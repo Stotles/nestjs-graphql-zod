@@ -18,7 +18,9 @@ describe('createZodPropertyDescriptor', () => {
     const obj = {} as Record<string, any>
     Object.defineProperty(obj, 'count', descriptor)
 
-    expect(() => { obj.count = 'not a number' }).toThrow()
+    expect(() => {
+      obj.count = 'not a number'
+    }).toThrow()
   })
 
   it('should use safeParse when safe option is true', () => {
@@ -37,7 +39,7 @@ describe('createZodPropertyDescriptor', () => {
       onParseError() {
         errorCalled = true
         return 'fallback'
-      }
+      },
     })
     const obj = {} as Record<string, any>
     Object.defineProperty(obj, 'name', descriptor)

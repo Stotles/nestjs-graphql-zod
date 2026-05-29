@@ -26,7 +26,7 @@ describe('makeDecoratorFromFactory', () => {
       expect(factory).toHaveBeenCalledOnce()
       const [typeFunc, options] = factory.mock.calls[0]
       expect(typeof typeFunc).toBe('function')
-      expect((typeFunc as unknown as () => unknown)()).toBe(StubModel)
+      expect((typeFunc as () => unknown)()).toBe(StubModel)
       expect(options).toMatchObject({ name: 'myQuery' })
     })
 
@@ -34,7 +34,11 @@ describe('makeDecoratorFromFactory', () => {
       const sentinel: MethodDecorator = () => {}
       const factory = makeFactory(() => sentinel)
 
-      const result = makeDecoratorFromFactory('renamed', factory as unknown as Factory, StubModel as any)
+      const result = makeDecoratorFromFactory(
+        'renamed',
+        factory as unknown as Factory,
+        StubModel as any,
+      )
 
       expect(result).toBe(sentinel)
     })
