@@ -3,7 +3,7 @@ import { Mutation, MutationOptions as MO } from '@nestjs/graphql'
 import { describeZodSchema } from '../../helpers/describe-zod-schema'
 import { MethodWithZod } from '../common'
 
-import type { ZodObject } from 'zod'
+import type { $ZodObject } from 'zod/v4/core'
 import type { IModelFromZodOptions } from '../../model-from-zod'
 
 /**
@@ -14,7 +14,7 @@ import type { IModelFromZodOptions } from '../../model-from-zod'
  * Expressed as a type intersection so the union is preserved and TypeScript still narrows
  * `defaultValue` based on the `nullable` member.
  */
-export type MutationOptions<T extends ZodObject> = MO & {
+export type MutationOptions<T extends $ZodObject> = MO & {
   /**
    * Options for model creation from `zod`.
    *
@@ -34,7 +34,7 @@ export type MutationOptions<T extends ZodObject> = MO & {
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function MutationWithZod<T extends ZodObject>(input: T): MethodDecorator
+export function MutationWithZod<T extends $ZodObject>(input: T): MethodDecorator
 
 /**
  * Mutation handler (method) Decorator. Routes specified mutation to this method.
@@ -47,7 +47,7 @@ export function MutationWithZod<T extends ZodObject>(input: T): MethodDecorator
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function MutationWithZod<T extends ZodObject>(input: T, name: string): MethodDecorator
+export function MutationWithZod<T extends $ZodObject>(input: T, name: string): MethodDecorator
 
 /**
  * Mutation handler (method) Decorator. Routes specified mutation to this method.
@@ -60,12 +60,12 @@ export function MutationWithZod<T extends ZodObject>(input: T, name: string): Me
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function MutationWithZod<T extends ZodObject>(
+export function MutationWithZod<T extends $ZodObject>(
   input: T,
   options: MutationOptions<T>,
 ): MethodDecorator
 
-export function MutationWithZod<T extends ZodObject>(
+export function MutationWithZod<T extends $ZodObject>(
   input: T,
   nameOrOptions?: string | MutationOptions<T>,
 ) {

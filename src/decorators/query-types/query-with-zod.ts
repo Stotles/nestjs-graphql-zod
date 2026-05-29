@@ -3,7 +3,7 @@ import { Query, QueryOptions as QO } from '@nestjs/graphql'
 import { describeZodSchema } from '../../helpers/describe-zod-schema'
 import { MethodWithZod } from '../common'
 
-import type { ZodObject } from 'zod'
+import type { $ZodObject } from 'zod/v4/core'
 import type { IModelFromZodOptions } from '../../model-from-zod'
 
 /**
@@ -14,7 +14,7 @@ import type { IModelFromZodOptions } from '../../model-from-zod'
  * Expressed as a type intersection so the union is preserved and TypeScript still narrows
  * `defaultValue` based on the `nullable` member.
  */
-export type QueryOptions<T extends ZodObject> = QO & {
+export type QueryOptions<T extends $ZodObject> = QO & {
   /**
    * Options for model creation from `zod`.
    *
@@ -34,7 +34,7 @@ export type QueryOptions<T extends ZodObject> = QO & {
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function QueryWithZod<T extends ZodObject>(input: T): MethodDecorator
+export function QueryWithZod<T extends $ZodObject>(input: T): MethodDecorator
 
 /**
  * Query handler (method) Decorator. Routes specified query to this method.
@@ -47,7 +47,7 @@ export function QueryWithZod<T extends ZodObject>(input: T): MethodDecorator
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function QueryWithZod<T extends ZodObject>(input: T, name: string): MethodDecorator
+export function QueryWithZod<T extends $ZodObject>(input: T, name: string): MethodDecorator
 
 /**
  * Query handler (method) Decorator. Routes specified query to this method.
@@ -60,12 +60,12 @@ export function QueryWithZod<T extends ZodObject>(input: T, name: string): Metho
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function QueryWithZod<T extends ZodObject>(
+export function QueryWithZod<T extends $ZodObject>(
   input: T,
   options: QueryOptions<T>,
 ): MethodDecorator
 
-export function QueryWithZod<T extends ZodObject>(
+export function QueryWithZod<T extends $ZodObject>(
   input: T,
   nameOrOptions?: string | QueryOptions<T>,
 ) {

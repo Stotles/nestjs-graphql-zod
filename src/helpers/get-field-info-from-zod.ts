@@ -1,22 +1,22 @@
 import { GraphQLScalarType } from 'graphql/type/definition'
 import {
-  ZodArray,
-  ZodBoolean,
-  ZodDefault,
-  ZodEnum,
-  ZodLazy,
-  ZodNonOptional,
-  ZodNullable,
-  ZodNumber,
-  ZodObject,
-  ZodOptional,
-  ZodPipe,
-  ZodPrefault,
-  ZodReadonly,
-  ZodString,
-  ZodStringFormat,
-  ZodType,
-} from 'zod'
+  $ZodArray,
+  $ZodBoolean,
+  $ZodDefault,
+  $ZodEnum,
+  $ZodLazy,
+  $ZodNonOptional,
+  $ZodNullable,
+  $ZodNumber,
+  $ZodObject,
+  $ZodOptional,
+  $ZodPipe,
+  $ZodPrefault,
+  $ZodReadonly,
+  $ZodString,
+  $ZodStringFormat,
+  $ZodType,
+} from 'zod/v4/core'
 
 import type { Type } from '@nestjs/common'
 import { Int } from '@nestjs/graphql'
@@ -27,12 +27,13 @@ import { MAX_ZOD_DEPTH } from './constants'
 import { Direction, getZodObjectName, resolvePipeTarget } from './get-zod-object-name'
 import { isZodInstance } from './is-zod-instance'
 import { toTitleCase } from './to-title-case'
+import { getZodDescription, getZodMeta, isNullableSchema, isOptionalSchema } from './zod-core-meta'
 
 // Tracks nested invocation depth of `getFieldInfoFromZod`. Each recursive
-// branch (ZodArray element, ZodOptional/Nullable/Readonly/Default/Prefault/
-// NonOptional inner type, ZodPipe direction target, ZodLazy getter result)
-// increments this counter. The hard cap protects against `ZodLazy` chains
-// that don't resolve through a `ZodObject` — those bypass the class cache
+// branch ($ZodArray element, $ZodOptional/Nullable/Readonly/Default/Prefault/
+// NonOptional inner type, $ZodPipe direction target, $ZodLazy getter result)
+// increments this counter. The hard cap protects against `$ZodLazy` chains
+// that don't resolve through a `$ZodObject` — those bypass the class cache
 // in `modelFromZodBase` and would otherwise recurse until the JS stack runs
 // out (e.g. `let self; self = z.lazy(() => self)` at a field position).
 let _getFieldInfoDepth = 0
@@ -116,16 +117,16 @@ export interface ZodTypeInfo {
  *
  * @template T The zod type.
  */
-type Options<T extends ZodType> = IModelFromZodOptions<T> & {
+type Options<T extends $ZodType> = IModelFromZodOptions<T> & {
   /**
    * Provides the decorator to decorate the dynamically generated class.
    *
    * @memberof IOptions
-   * @param {ZodType} zodInput The zod input.
+   * @param {$ZodType} zodInput The zod input.
    * @param {string} key The name of the currently processsed property.
    * @returns {ClassDecorator} The class decorator to decorate the class.
    */
-  getDecorator?: (zodInput: ZodType, key: string) => ClassDecorator
+  getDecorator?: (zodInput: $ZodType, key: string) => ClassDecorator
 }
 
 /**
@@ -133,16 +134,16 @@ type Options<T extends ZodType> = IModelFromZodOptions<T> & {
  *
  * @template T The type of the `zod` object input.
  * @param {string} key The key of the property of the `zod` object input, that is being converted.
- * @param {ZodType} prop The `zod` object property.
+ * @param {$ZodType} prop The `zod` object property.
  * @param {Options<T>} options The options for conversion.
  * @param {Direction} direction Whether to resolve the input (client-sent) or output
- *   (server-produced) side of transforming schemas like `ZodPipe`.
+ *   (server-produced) side of transforming schemas like `$ZodPipe`.
  * @returns {ZodTypeInfo} The {@link ZodTypeInfo} of the property.
  * @export
  */
-export function getFieldInfoFromZod<T extends ZodType>(
+export function getFieldInfoFromZod<T extends $ZodType>(
   key: string,
-  prop: ZodType,
+  prop: $ZodType,
   options: Options<T>,
   direction: Direction,
 ): ZodTypeInfo {
@@ -165,24 +166,24 @@ export function getFieldInfoFromZod<T extends ZodType>(
   }
 }
 
-function getFieldInfoFromZodInner<T extends ZodType>(
+function getFieldInfoFromZodInner<T extends $ZodType>(
   key: string,
-  prop: ZodType,
+  prop: $ZodType,
   options: Options<T>,
   direction: Direction,
 ): ZodTypeInfo {
-  // Honour an explicit GraphQL type hint attached via zod's `.meta()` system. This
-  // is the escape hatch for schemas whose type the library cannot recover
+  // Honour an explicit GraphQL type hint attached via zod's metadata registry.
+  // This is the escape hatch for schemas whose type the library cannot recover
   // from the schema shape alone (e.g. a `.transform(fn)` on the output side).
   // Checked before pattern-matching so the hint wins over normal inference.
-  const graphqlTypeHint =
-    direction === 'input' ? prop.meta()?.graphqlTypeInput : prop.meta()?.graphqlTypeOutput
+  const meta = getZodMeta(prop)
+  const graphqlTypeHint = direction === 'input' ? meta?.graphqlTypeInput : meta?.graphqlTypeOutput
   if (graphqlTypeHint) {
     if (typeof graphqlTypeHint === 'function') {
       return {
         type: graphqlTypeHint(),
-        isOptional: isOptional(prop),
-        isNullable: isNullable(prop),
+        isOptional: isOptionalSchema(prop),
+        isNullable: isNullableSchema(prop),
       }
     }
     throw new Error(
@@ -191,47 +192,52 @@ function getFieldInfoFromZodInner<T extends ZodType>(
   }
 
   // Fundamental types
-  if (isZodInstance(ZodArray, prop)) {
-    const data = getFieldInfoFromZod(key, prop.element as ZodType, options, direction)
+  if (isZodInstance($ZodArray, prop)) {
+    const data = getFieldInfoFromZod(key, prop._zod.def.element, options, direction)
 
     const { type, isEnum, isNullable: isItemNullable, isOptional: isItemOptional } = data
 
     return {
       type: [type],
-      isOptional: isOptional(prop),
-      isNullable: isNullable(prop),
+      isOptional: isOptionalSchema(prop),
+      isNullable: isNullableSchema(prop),
       isEnum,
       isOfArray: true,
       isItemNullable,
       isItemOptional,
     }
   }
-  if (isZodInstance(ZodBoolean, prop)) {
+  if (isZodInstance($ZodBoolean, prop)) {
     return {
       type: Boolean,
-      isOptional: isOptional(prop),
-      isNullable: isNullable(prop),
+      isOptional: isOptionalSchema(prop),
+      isNullable: isNullableSchema(prop),
     }
   }
-  if (isZodInstance(ZodString, prop) || isZodInstance(ZodStringFormat, prop)) {
+  if (isZodInstance($ZodString, prop) || isZodInstance($ZodStringFormat, prop)) {
     return {
       type: String,
-      isOptional: isOptional(prop),
-      isNullable: isNullable(prop),
+      isOptional: isOptionalSchema(prop),
+      isNullable: isNullableSchema(prop),
     }
   }
-  if (isZodInstance(ZodNumber, prop)) {
-    const format = prop.format
+  if (isZodInstance($ZodNumber, prop)) {
+    // The format produced by `.int()` / `.int32()` / `z.int()` / `z.int32()` is
+    // tracked in the schema's `bag` (populated by the `number_format` check's
+    // `onattach`). Reading `bag.format` here covers both `z.number().int()` —
+    // which stays a plain `$ZodNumber` with a check attached — and `z.int()`
+    // — which is a `$ZodNumberFormat` instance with the same bag entry.
+    const format = prop._zod.bag.format
     // Purposely not including `uint32` since GraphQL Int type is a signed 32-bit integer
     const isInt = format === 'safeint' || format === 'int32'
 
     return {
       type: isInt ? Int : Number,
-      isOptional: isOptional(prop),
-      isNullable: isNullable(prop),
+      isOptional: isOptionalSchema(prop),
+      isNullable: isNullableSchema(prop),
     }
   }
-  if (isZodInstance(ZodObject, prop)) {
+  if (isZodInstance($ZodObject, prop)) {
     const { provideNameForNestedClass = defaultNestedClassNameProvider } = options
 
     let name = provideNameForNestedClass(options.name || '', key)
@@ -247,8 +253,8 @@ function getFieldInfoFromZodInner<T extends ZodType>(
     const nestedOptions = {
       ...options,
       name,
-      description: prop.description,
-      isAbstract: isNullable(prop) || isOptional(prop),
+      description: getZodDescription(prop),
+      isAbstract: isNullableSchema(prop) || isOptionalSchema(prop),
     }
 
     let model: any
@@ -278,35 +284,35 @@ function getFieldInfoFromZodInner<T extends ZodType>(
     return {
       type: model,
       isType: true,
-      isNullable: isNullable(prop),
-      isOptional: isOptional(prop),
+      isNullable: isNullableSchema(prop),
+      isOptional: isOptionalSchema(prop),
     }
   }
-  if (isZodInstance(ZodEnum, prop)) {
+  if (isZodInstance($ZodEnum, prop)) {
     return {
       type: prop,
-      isNullable: isNullable(prop),
-      isOptional: isOptional(prop),
+      isNullable: isNullableSchema(prop),
+      isOptional: isOptionalSchema(prop),
       isEnum: true,
     }
   }
 
   // Basic wrappers which don't change the type, nullability or optionality
-  if (isZodInstance(ZodDefault, prop)) {
-    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
+  if (isZodInstance($ZodDefault, prop)) {
+    return getFieldInfoFromZod(key, prop._zod.def.innerType, options, direction)
   }
-  if (isZodInstance(ZodReadonly, prop)) {
-    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
+  if (isZodInstance($ZodReadonly, prop)) {
+    return getFieldInfoFromZod(key, prop._zod.def.innerType, options, direction)
   }
-  if (isZodInstance(ZodPrefault, prop)) {
-    return getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
+  if (isZodInstance($ZodPrefault, prop)) {
+    return getFieldInfoFromZod(key, prop._zod.def.innerType, options, direction)
   }
 
   // Wrappers which may change the nullability or optionality, but not the type
-  if (isZodInstance(ZodOptional, prop)) {
+  if (isZodInstance($ZodOptional, prop)) {
     const { type, isEnum, isOfArray, isItemNullable, isItemOptional } = getFieldInfoFromZod(
       key,
-      prop.unwrap() as ZodType,
+      prop._zod.def.innerType,
       options,
       direction,
     )
@@ -318,30 +324,30 @@ function getFieldInfoFromZodInner<T extends ZodType>(
       isItemNullable,
       isItemOptional,
       isOptional: true,
-      isNullable: isNullable(prop),
+      isNullable: isNullableSchema(prop),
     }
   }
-  if (isZodInstance(ZodNonOptional, prop)) {
-    const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
+  if (isZodInstance($ZodNonOptional, prop)) {
+    const inner = getFieldInfoFromZod(key, prop._zod.def.innerType, options, direction)
     return { ...inner, isOptional: false }
   }
-  if (isZodInstance(ZodNullable, prop)) {
-    const inner = getFieldInfoFromZod(key, prop._def.innerType as ZodType, options, direction)
+  if (isZodInstance($ZodNullable, prop)) {
+    const inner = getFieldInfoFromZod(key, prop._zod.def.innerType, options, direction)
     return { ...inner, isNullable: true }
   }
 
   // Wrappers which can change the type, nullability and optionality
-  if (isZodInstance(ZodPipe, prop)) {
+  if (isZodInstance($ZodPipe, prop)) {
     return getFieldInfoFromZod(key, resolvePipeTarget(prop, direction, key), options, direction)
   }
-  if (isZodInstance(ZodLazy, prop)) {
-    const getter = prop._def.getter
+  if (isZodInstance($ZodLazy, prop)) {
+    const getter = prop._zod.def.getter
     if (typeof getter !== 'function') {
       throw new Error(`Invalid ZodLazy schema for Key("${key}"): getter is not a function.`)
     }
 
     const lazyType = getter()
-    if (!isZodInstance(ZodType, lazyType)) {
+    if (!isZodInstance($ZodType, lazyType)) {
       throw new Error(
         `Invalid ZodLazy schema for Key("${key}"): getter did not return a valid ZodType.`,
       )
@@ -369,8 +375,8 @@ function getFieldInfoFromZodInner<T extends ZodType>(
       return {
         isType: true,
         type: scalarType,
-        isNullable: isNullable(prop),
-        isOptional: isOptional(prop),
+        isNullable: isNullableSchema(prop),
+        isOptional: isOptionalSchema(prop),
       }
     } else {
       throw new Error(
@@ -388,57 +394,36 @@ export namespace getFieldInfoFromZod {
   // `ZodEnum`'s constructor signature — TS 6 can't name that portably.
 
   /** The types that are parseable by the {@link getFieldInfoFromZod} function. */
-  export const PARSED_TYPES: readonly Type<ZodType>[] = [
-    ZodArray,
-    ZodBoolean,
-    ZodDefault,
-    ZodEnum,
-    ZodLazy,
-    ZodNonOptional,
-    ZodNullable,
-    ZodNumber,
-    ZodObject,
-    ZodOptional,
-    ZodPipe,
-    ZodPrefault,
-    ZodReadonly,
-    ZodString,
-    ZodStringFormat,
+  export const PARSED_TYPES: readonly Type<$ZodType>[] = [
+    $ZodArray,
+    $ZodBoolean,
+    $ZodDefault,
+    $ZodEnum,
+    $ZodLazy,
+    $ZodNonOptional,
+    $ZodNullable,
+    $ZodNumber,
+    $ZodObject,
+    $ZodOptional,
+    $ZodPipe,
+    $ZodPrefault,
+    $ZodReadonly,
+    $ZodString,
+    $ZodStringFormat,
   ]
 
   /**
    * Determines if the given zod type is parseable by the {@link getFieldInfoFromZod} function.
    *
-   * @param {ZodType} input The zod type input.
+   * @param {$ZodType} input The zod type input.
    * @returns {boolean} `true` if the given input is parseable.
    * @export
    */
-  export function canParse(input: ZodType): boolean {
-    if (typeof input.meta()?.graphqlTypeInput === 'function') return true
-    if (typeof input.meta()?.graphqlTypeOutput === 'function') return true
+  export function canParse(input: $ZodType): boolean {
+    const meta = getZodMeta(input)
+    if (typeof meta?.graphqlTypeInput === 'function') return true
+    if (typeof meta?.graphqlTypeOutput === 'function') return true
     return PARSED_TYPES.some((it) => isZodInstance(it, input))
-  }
-}
-
-// `safeParse` despite its name can throw if the schema contains `.transform()`
-// or `.preprocess()` that throw on inputs they can't handle. In those cases, we
-// just assume it can't handle `undefined`/`null` and return false since it will
-// be a mistake to throw in that scenario. While there is a small risk of masking
-// a real error from zod, this is something we accept since ZodError shouldn't be
-// ever returned here.
-function isOptional(prop: ZodType): boolean {
-  try {
-    return prop.safeParse(undefined).success
-  } catch {
-    return false
-  }
-}
-
-function isNullable(prop: ZodType): boolean {
-  try {
-    return prop.safeParse(null).success
-  } catch {
-    return false
   }
 }
 

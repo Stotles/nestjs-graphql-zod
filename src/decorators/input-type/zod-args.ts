@@ -1,4 +1,4 @@
-import { ZodObject, ZodType, output } from 'zod'
+import { $ZodObject, $ZodType, output } from 'zod/v4/core'
 
 import { PipeTransform, Type } from '@nestjs/common'
 import { Args, ArgsOptions } from '@nestjs/graphql'
@@ -56,7 +56,7 @@ type CustomDecoratorOptions = {
 
 type DecoratorOptions = ArgsOptions & CustomDecoratorOptions
 
-let GENERATED_TYPES: WeakMap<ZodType, object> | undefined
+let GENERATED_TYPES: WeakMap<$ZodType, object> | undefined
 let USED_NAMES: string[] | undefined
 
 /**
@@ -67,7 +67,7 @@ let USED_NAMES: string[] | undefined
  * @param {CustomDecoratorOptions} options The custom decorator options.
  * @returns {any} The newly or previously created class instance.
  */
-function _getOrCreateRegisteredType<T extends ZodObject>(
+function _getOrCreateRegisteredType<T extends $ZodObject>(
   input: T,
   options: CustomDecoratorOptions,
 ) {
@@ -138,7 +138,7 @@ function _getSafeName(name: string): string {
  * argument.
  * @export
  */
-export function ZodArgs<T extends ZodType>(
+export function ZodArgs<T extends $ZodType>(
   input: T,
   property: string,
   options: DecoratorOptions,
@@ -157,7 +157,7 @@ export function ZodArgs<T extends ZodType>(
  * argument.
  * @export
  */
-export function ZodArgs<T extends ZodType>(
+export function ZodArgs<T extends $ZodType>(
   input: T,
   options: DecoratorOptions,
   ...pipes: PT[]
@@ -175,7 +175,7 @@ export function ZodArgs<T extends ZodType>(
  * argument.
  * @export
  */
-export function ZodArgs<T extends ZodType>(
+export function ZodArgs<T extends $ZodType>(
   input: T,
   property: string,
   ...pipes: PT[]
@@ -192,9 +192,9 @@ export function ZodArgs<T extends ZodType>(
  * argument.
  * @export
  */
-export function ZodArgs<T extends ZodType>(input: T, ...pipes: PT[]): ParameterDecorator
+export function ZodArgs<T extends $ZodType>(input: T, ...pipes: PT[]): ParameterDecorator
 
-export function ZodArgs<T extends ZodType>(
+export function ZodArgs<T extends $ZodType>(
   input: T,
   propertyOrOptions?: string | DecoratorOptions | PT,
   optionsOrPipe?: DecoratorOptions | PT,
@@ -231,7 +231,7 @@ export function ZodArgs<T extends ZodType>(
   const { getScalarTypeFor = getDefaultTypeProvider() } = options
 
   try {
-    if (!isZodInstance(ZodObject, input)) {
+    if (!isZodInstance($ZodObject, input)) {
       pipes.unshift(new ZodValidatorPipe(input))
       const typeInfo = getFieldInfoFromZod('', input, options, 'input')
       const nullability = getNullability(typeInfo)
@@ -299,7 +299,7 @@ function prepareDecorator(
 
 export namespace ZodArgs {
   /** A type for inferring the type of a given `zod` validation object. */
-  export type Of<T extends ZodType> = output<T>
+  export type Of<T extends $ZodType> = output<T>
 
   /**
    * Frees the used objects during the startup.

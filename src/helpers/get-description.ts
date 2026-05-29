@@ -1,6 +1,7 @@
-import { ZodType } from 'zod'
+import type { $ZodType } from 'zod/v4/core'
 
 import { iterateZodLayers } from './unwrap'
+import { getZodDescription } from './zod-core-meta'
 
 /**
  * Extracts the description from a given type.
@@ -14,12 +15,14 @@ import { iterateZodLayers } from './unwrap'
  * @param {T} [input] The zod object input.
  * @returns {string | undefined} The description of the input or `undefined`.
  */
-export function getDescription<T extends ZodType>(input?: T): string | undefined {
+export function getDescription<T extends $ZodType>(input?: T): string | undefined {
   if (!input) return
 
-  if (input.description) return input.description
+  const direct = getZodDescription(input)
+  if (direct) return direct
 
   for (const layer of iterateZodLayers(input)) {
-    if (layer.description) return layer.description
+    const layerDescription = getZodDescription(layer)
+    if (layerDescription) return layerDescription
   }
 }

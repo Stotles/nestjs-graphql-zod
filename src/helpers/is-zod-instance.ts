@@ -1,4 +1,4 @@
-import type { ZodType } from 'zod'
+import type { $ZodType } from 'zod/v4/core'
 import type { Type } from '@nestjs/common'
 
 /**
@@ -11,7 +11,7 @@ import type { Type } from '@nestjs/common'
  *   `false`.
  * @export
  */
-export function isZodInstance<T extends Type<ZodType>>(
+export function isZodInstance<T extends Type<$ZodType>>(
   zodClass: T,
   input: object,
 ): input is InstanceType<T> {

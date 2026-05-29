@@ -2,7 +2,7 @@ import type { Type } from '@nestjs/common'
 import type { EnumProvider } from './types/enum-provider'
 import type { TypeProvider } from './types/type-provider'
 
-import type { ZodObject, ZodError, ZodType, output } from 'zod'
+import type { $ZodObject, $ZodError, $ZodType, output } from 'zod/v4/core'
 
 import { ObjectType, ObjectTypeOptions } from '@nestjs/graphql'
 
@@ -10,8 +10,9 @@ import { extractNameAndDescription, parseShape } from './helpers'
 import { MAX_ZOD_DEPTH, ZodObjectKey } from './helpers/constants'
 import { describeZodSchema } from './helpers/describe-zod-schema'
 import { Direction } from './helpers/get-zod-object-name'
+import { isNullableSchema, isOptionalSchema } from './helpers/zod-core-meta'
 
-export interface IModelFromZodOptions<T extends ZodType> extends ObjectTypeOptions {
+export interface IModelFromZodOptions<T extends $ZodType> extends ObjectTypeOptions {
   /**
    * The name of the model class in GraphQL schema.
    *
@@ -74,7 +75,7 @@ export interface IModelFromZodOptions<T extends ZodType> extends ObjectTypeOptio
    * @param {K} key The key that could not be parsed.
    * @param {T[ K ]} newValue The new value that is tried to be parsed.
    * @param {T[K] | undefined} oldValue The previous value of the property.
-   * @param {ZodError<T[ K ]>} error The error thrown during parsing.
+   * @param {$ZodError} error The error thrown during parsing.
    * @returns {any} {(T[ keyof T ] | void)} An alternative fallback value to replace and dismiss the
    *   error, or nothing.
    */
@@ -82,7 +83,7 @@ export interface IModelFromZodOptions<T extends ZodType> extends ObjectTypeOptio
     key: K,
     newValue: output<T>[K],
     oldValue: output<T>[K] | undefined,
-    error: ZodError,
+    error: $ZodError,
   ) => output<T>[keyof output<T>] | void
 
   /**
@@ -138,16 +139,16 @@ export interface IModelFromZodOptions<T extends ZodType> extends ObjectTypeOptio
   getEnumType?: EnumProvider
 }
 
-type Options<T extends ZodType> = IModelFromZodOptions<T> & {
+type Options<T extends $ZodType> = IModelFromZodOptions<T> & {
   /**
    * Provides the decorator to decorate the dynamically generated class.
    *
    * @memberof IOptions
-   * @param {ZodType} zodInput The zod input.
+   * @param {$ZodType} zodInput The zod input.
    * @param {string} key The name of the currently processsed property.
    * @returns {ClassDecorator} The class decorator to decorate the class.
    */
-  getDecorator?: (zodInput: ZodType, key: string) => ClassDecorator
+  getDecorator?: (zodInput: $ZodType, key: string) => ClassDecorator
 }
 
 // Cache of generated classes, partitioned by direction. The same Zod schema
@@ -155,7 +156,9 @@ type Options<T extends ZodType> = IModelFromZodOptions<T> & {
 // input (`@InputType`) class, so the two must not share a slot — otherwise
 // the second caller silently receives the first caller's decorated class
 // and `@nestjs/graphql` rejects the schema at build time.
-let _generatedClasses: { input: WeakMap<ZodType, Type>; output: WeakMap<ZodType, Type> } | undefined
+let _generatedClasses:
+  | { input: WeakMap<$ZodType, Type>; output: WeakMap<$ZodType, Type> }
+  | undefined
 
 // Tracks nested invocation depth of `modelFromZodBase`. The class cache catches
 // recursive schemas where the same Zod instance is re-encountered, this counter
@@ -179,7 +182,7 @@ export function _getModelFromZodDepth(): number {
  *
  * @internal
  */
-export function _getCachedClass(schema: ZodType, direction: Direction): Type | undefined {
+export function _getCachedClass(schema: $ZodType, direction: Direction): Type | undefined {
   return _generatedClasses?.[direction].get(schema)
 }
 
@@ -196,15 +199,15 @@ export function _getCachedClass(schema: ZodType, direction: Direction): Type | u
  * compatible with `GraphQL`.
  * @export
  */
-export function modelFromZodBase<T extends ZodObject, O extends Options<T>>(
+export function modelFromZodBase<T extends $ZodObject, O extends Options<T>>(
   zodInput: T,
   options: O = {} as O,
   decorator: ClassDecorator,
   direction: Direction,
 ): Type<output<T>> {
   const cache = (_generatedClasses ??= {
-    input: new WeakMap<ZodType, Type>(),
-    output: new WeakMap<ZodType, Type>(),
+    input: new WeakMap<$ZodType, Type>(),
+    output: new WeakMap<$ZodType, Type>(),
   })
   const previousRecord = cache[direction].get(zodInput)
 
@@ -280,7 +283,7 @@ export function modelFromZodBase<T extends ZodObject, O extends Options<T>>(
  * compatible with `GraphQL`.
  * @export
  */
-export function modelFromZod<T extends ZodObject, O extends IModelFromZodOptions<T>>(
+export function modelFromZod<T extends $ZodObject, O extends IModelFromZodOptions<T>>(
   zodInput: T,
   options: O = {} as O,
 ): Type<output<T>> {
@@ -288,7 +291,7 @@ export function modelFromZod<T extends ZodObject, O extends IModelFromZodOptions
 
   const decorator = ObjectType(name, {
     description,
-    isAbstract: zodInput.isNullable() || zodInput.isOptional(),
+    isAbstract: isNullableSchema(zodInput) || isOptionalSchema(zodInput),
     ...options,
   })
 
