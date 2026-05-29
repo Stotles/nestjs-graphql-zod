@@ -129,7 +129,7 @@ export function SubscriptionWithZod<T extends ZodObject>(
               return prev
             }, {})
 
-            return new BadRequestException(messages)
+            throw new BadRequestException(messages)
           })
       } else {
         const parseResult = input.safeParse(result)
@@ -141,7 +141,7 @@ export function SubscriptionWithZod<T extends ZodObject>(
             return prev
           }, {})
 
-          return new BadRequestException(messages)
+          throw new BadRequestException(messages)
         }
       }
     }
