@@ -1,10 +1,10 @@
 import type { ReturnTypeFunc } from '@nestjs/graphql'
 import type { SupportedOptionTypes } from './zod-options-wrapper.interface'
-import type { ZodObject } from 'zod'
+import type { $ZodObject } from 'zod/v4/core'
 import type { Type } from '@nestjs/common'
 
 /** Describes a dynamically built class out of the given zod validation object. */
-export type DynamicZodModelClass<T extends ZodObject> = Type<T>
+export type DynamicZodModelClass<T extends $ZodObject> = Type<T>
 
 type Decorators = MethodDecorator | ClassDecorator | ParameterDecorator
 

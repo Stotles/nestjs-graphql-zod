@@ -1,6 +1,6 @@
 import { InputTypeWithZod } from './input-type-with-zod'
 
-import type { ZodObject, output } from 'zod'
+import type { $ZodObject, output } from 'zod/v4/core'
 import type { Type } from '@nestjs/common'
 
 import type { Options } from './options.inteface'
@@ -16,7 +16,7 @@ import type { Options } from './options.inteface'
  *   with {@link InputTypeWithZod}.
  * @export
  */
-export function inputFromZod<T extends ZodObject>(input: T): Type<output<T>>
+export function inputFromZod<T extends $ZodObject>(input: T): Type<output<T>>
 
 /**
  * Returns a {@link InputTypeWithZod} decorated class from given `zod` input.
@@ -30,7 +30,7 @@ export function inputFromZod<T extends ZodObject>(input: T): Type<output<T>>
  *   with {@link InputTypeWithZod}.
  * @export
  */
-export function inputFromZod<T extends ZodObject>(input: T, options: Options<T>): Type<output<T>>
+export function inputFromZod<T extends $ZodObject>(input: T, options: Options<T>): Type<output<T>>
 
 /**
  * Returns a {@link InputTypeWithZod} decorated class from given `zod` input.
@@ -45,13 +45,13 @@ export function inputFromZod<T extends ZodObject>(input: T, options: Options<T>)
  *   with {@link InputTypeWithZod}.
  * @export
  */
-export function inputFromZod<T extends ZodObject>(
+export function inputFromZod<T extends $ZodObject>(
   input: T,
   name: string,
   options?: Options<T>,
 ): Type<output<T>>
 
-export function inputFromZod<T extends ZodObject>(
+export function inputFromZod<T extends $ZodObject>(
   input: T,
   nameOrOptions?: string | Options<T>,
   options?: Options<T>,

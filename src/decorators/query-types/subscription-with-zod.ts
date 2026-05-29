@@ -6,7 +6,7 @@ import { Subscription, SubscriptionOptions as SO } from '@nestjs/graphql'
 import { describeZodSchema } from '../../helpers/describe-zod-schema'
 import { IModelFromZodOptions, modelFromZod } from '../../model-from-zod'
 
-import type { ZodObject, ZodError } from 'zod'
+import { $ZodObject, $ZodError, parseAsync, safeParse } from 'zod/v4/core'
 
 /**
  * Options for {@link SubscriptionWithZod}, mirroring `@nestjs/graphql`'s {@link SO} (a discriminated
@@ -16,7 +16,7 @@ import type { ZodObject, ZodError } from 'zod'
  * Expressed as a type intersection so the union is preserved and TypeScript still narrows
  * `defaultValue` based on the `nullable` member.
  */
-export type SubscriptionOptions<T extends ZodObject> = SO & {
+export type SubscriptionOptions<T extends $ZodObject> = SO & {
   /**
    * Options for model creation from `zod`.
    *
@@ -36,7 +36,7 @@ export type SubscriptionOptions<T extends ZodObject> = SO & {
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function SubscriptionWithZod<T extends ZodObject>(input: T): MethodDecorator
+export function SubscriptionWithZod<T extends $ZodObject>(input: T): MethodDecorator
 
 /**
  * Subscription handler (method) Decorator. Routes subscriptions to this method.
@@ -49,7 +49,7 @@ export function SubscriptionWithZod<T extends ZodObject>(input: T): MethodDecora
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function SubscriptionWithZod<T extends ZodObject>(input: T, name: string): MethodDecorator
+export function SubscriptionWithZod<T extends $ZodObject>(input: T, name: string): MethodDecorator
 
 /**
  * Subscription handler (method) Decorator. Routes subscriptions to this method.
@@ -62,7 +62,7 @@ export function SubscriptionWithZod<T extends ZodObject>(input: T, name: string)
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function SubscriptionWithZod<T extends ZodObject>(
+export function SubscriptionWithZod<T extends $ZodObject>(
   input: T,
   options: SubscriptionOptions<T>,
 ): MethodDecorator
@@ -80,13 +80,13 @@ export function SubscriptionWithZod<T extends ZodObject>(
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function SubscriptionWithZod<T extends ZodObject>(
+export function SubscriptionWithZod<T extends $ZodObject>(
   input: T,
   name: string,
   options: Pick<SubscriptionOptions<T>, 'filter' | 'resolve' | 'zod'>,
 ): MethodDecorator
 
-export function SubscriptionWithZod<T extends ZodObject>(
+export function SubscriptionWithZod<T extends $ZodObject>(
   input: T,
   nameOrOptions?: string | SubscriptionOptions<T>,
   pickedOptions?: Pick<SubscriptionOptions<T>, 'filter' | 'resolve' | 'zod'>,
@@ -121,9 +121,9 @@ export function SubscriptionWithZod<T extends ZodObject>(
       const result = originalFunction.apply(this, args)
       if (result instanceof Promise) {
         return result
-          .then((output) => input.parseAsync(output))
+          .then((output) => parseAsync(input, output))
           .then((output) => plainToInstance(model, output))
-          .catch((error: ZodError) => {
+          .catch((error: $ZodError) => {
             const messages = error.issues.reduce<Record<string, string>>((prev, curr) => {
               prev[curr.path.join('.')] = curr.message
               return prev
@@ -132,7 +132,7 @@ export function SubscriptionWithZod<T extends ZodObject>(
             throw new BadRequestException(messages)
           })
       } else {
-        const parseResult = input.safeParse(result)
+        const parseResult = safeParse(input, result)
         if (parseResult.success) {
           return plainToInstance(model, parseResult.data)
         } else {

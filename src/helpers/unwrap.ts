@@ -1,18 +1,18 @@
 import {
-  ZodArray,
-  ZodCatch,
-  ZodDefault,
-  ZodLazy,
-  ZodNullable,
-  ZodOptional,
-  ZodPipe,
-  ZodPrefault,
-  ZodPromise,
-  ZodReadonly,
-  ZodSet,
-  ZodTransform,
-  ZodType,
-} from 'zod'
+  $ZodArray,
+  $ZodCatch,
+  $ZodDefault,
+  $ZodLazy,
+  $ZodNullable,
+  $ZodOptional,
+  $ZodPipe,
+  $ZodPrefault,
+  $ZodPromise,
+  $ZodReadonly,
+  $ZodSet,
+  $ZodTransform,
+  $ZodType,
+} from 'zod/v4/core'
 
 import { Prev } from '../types/prev'
 import { isZodInstance } from './is-zod-instance'
@@ -21,43 +21,43 @@ import { isZodInstance } from './is-zod-instance'
  * Unwraps any given zod type by one level.
  *
  * The supported zod wrappers are:
- * - {@link ZodArray}
- * - {@link ZodCatch}
- * - {@link ZodDefault}
- * - {@link ZodLazy}
- * - {@link ZodNullable}
- * - {@link ZodOptional}
- * - {@link ZodPipe} (unwraps to the input side)
- * - {@link ZodPrefault}
- * - {@link ZodPromise}
- * - {@link ZodReadonly}
- * - {@link ZodSet}
- * - {@link ZodTransform} (no inner type — returns T)
+ * - {@link $ZodArray}
+ * - {@link $ZodCatch}
+ * - {@link $ZodDefault}
+ * - {@link $ZodLazy}
+ * - {@link $ZodNullable}
+ * - {@link $ZodOptional}
+ * - {@link $ZodPipe} (unwraps to the input side)
+ * - {@link $ZodPrefault}
+ * - {@link $ZodPromise}
+ * - {@link $ZodReadonly}
+ * - {@link $ZodSet}
+ * - {@link $ZodTransform} (no inner type — returns T)
  *
  * @template T The zod type.
  */
-export type UnwrapNestedZod<T extends ZodType> =
-  T extends ZodArray<infer I>
+export type UnwrapNestedZod<T extends $ZodType> =
+  T extends $ZodArray<infer I>
     ? I
-    : T extends ZodOptional<infer I>
+    : T extends $ZodOptional<infer I>
       ? I
-      : T extends ZodDefault<infer I>
+      : T extends $ZodDefault<infer I>
         ? I
-        : T extends ZodPrefault<infer I>
+        : T extends $ZodPrefault<infer I>
           ? I
-          : T extends ZodReadonly<infer I>
+          : T extends $ZodReadonly<infer I>
             ? I
-            : T extends ZodNullable<infer I>
+            : T extends $ZodNullable<infer I>
               ? I
-              : T extends ZodCatch<infer I>
+              : T extends $ZodCatch<infer I>
                 ? I
-                : T extends ZodPromise<infer I>
+                : T extends $ZodPromise<infer I>
                   ? I
-                  : T extends ZodSet<infer I>
+                  : T extends $ZodSet<infer I>
                     ? I
-                    : T extends ZodLazy<infer I>
+                    : T extends $ZodLazy<infer I>
                       ? I
-                      : T extends ZodPipe<infer I, any>
+                      : T extends $ZodPipe<infer I, any>
                         ? I
                         : T
 
@@ -67,13 +67,13 @@ export type UnwrapNestedZod<T extends ZodType> =
  * @template T The zod type.
  * @template Depth The maximum depth to unwrap, default `5`.
  */
-export type UnwrapNestedZodRecursive<T extends ZodType, Depth extends number = 5> = [
+export type UnwrapNestedZodRecursive<T extends $ZodType, Depth extends number = 5> = [
   Prev[Depth],
 ] extends [never]
   ? never
   : [T] extends [UnwrapNestedZod<T>]
     ? T
-    : UnwrapNestedZod<T> extends ZodType
+    : UnwrapNestedZod<T> extends $ZodType
       ? UnwrapNestedZodRecursive<UnwrapNestedZod<T>, Prev[Depth]>
       : UnwrapNestedZod<T>
 
@@ -86,19 +86,19 @@ export type UnwrapNestedZodRecursive<T extends ZodType, Depth extends number = 5
  * @export
  * @__PURE__
  */
-export function unwrapNestedZod<T extends ZodType>(input: T): UnwrapNestedZod<T> {
-  if (isZodInstance(ZodArray, input)) return input.element as UnwrapNestedZod<T>
-  if (isZodInstance(ZodCatch, input)) return input._def.innerType as UnwrapNestedZod<T>
-  if (isZodInstance(ZodDefault, input)) return input._def.innerType as UnwrapNestedZod<T>
-  if (isZodInstance(ZodPrefault, input)) return input._def.innerType as UnwrapNestedZod<T>
-  if (isZodInstance(ZodReadonly, input)) return input._def.innerType as UnwrapNestedZod<T>
-  if (isZodInstance(ZodPipe, input)) return input._def.in as UnwrapNestedZod<T>
-  if (isZodInstance(ZodTransform, input)) return input as unknown as UnwrapNestedZod<T>
-  if (isZodInstance(ZodLazy, input)) return input._def.getter() as UnwrapNestedZod<T>
-  if (isZodInstance(ZodNullable, input)) return input.unwrap() as UnwrapNestedZod<T>
-  if (isZodInstance(ZodOptional, input)) return input.unwrap() as UnwrapNestedZod<T>
-  if (isZodInstance(ZodPromise, input)) return input.unwrap() as UnwrapNestedZod<T>
-  if (isZodInstance(ZodSet, input)) return input._def.valueType as UnwrapNestedZod<T>
+export function unwrapNestedZod<T extends $ZodType>(input: T): UnwrapNestedZod<T> {
+  if (isZodInstance($ZodArray, input)) return input._zod.def.element as UnwrapNestedZod<T>
+  if (isZodInstance($ZodCatch, input)) return input._zod.def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance($ZodDefault, input)) return input._zod.def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance($ZodPrefault, input)) return input._zod.def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance($ZodReadonly, input)) return input._zod.def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance($ZodPipe, input)) return input._zod.def.in as UnwrapNestedZod<T>
+  if (isZodInstance($ZodTransform, input)) return input as unknown as UnwrapNestedZod<T>
+  if (isZodInstance($ZodLazy, input)) return input._zod.def.getter() as UnwrapNestedZod<T>
+  if (isZodInstance($ZodNullable, input)) return input._zod.def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance($ZodOptional, input)) return input._zod.def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance($ZodPromise, input)) return input._zod.def.innerType as UnwrapNestedZod<T>
+  if (isZodInstance($ZodSet, input)) return input._zod.def.valueType as UnwrapNestedZod<T>
   return input as UnwrapNestedZod<T>
 }
 
@@ -112,16 +112,16 @@ export function unwrapNestedZod<T extends ZodType>(input: T): UnwrapNestedZod<T>
  * @export
  * @__PURE__
  */
-export function unwrapNestedZodRecursively<T extends ZodType, Depth extends number = 5>(
+export function unwrapNestedZodRecursively<T extends $ZodType, Depth extends number = 5>(
   input: T,
 ): UnwrapNestedZodRecursive<T, Depth> {
-  let current = input as ZodType
+  let current = input as $ZodType
 
   for (const layer of iterateZodLayers(input)) {
     current = layer
   }
 
-  return current as UnwrapNestedZodRecursive<T, Depth> & ZodType
+  return current as UnwrapNestedZodRecursive<T, Depth> & $ZodType
 }
 
 /**
@@ -131,9 +131,9 @@ export function unwrapNestedZodRecursively<T extends ZodType, Depth extends numb
  * @param {T} input The zod input.
  * @export
  */
-export function* iterateZodLayers<T extends ZodType>(input: T) {
-  let current = input as ZodType
-  let unwrapped = unwrapNestedZod(input) as ZodType
+export function* iterateZodLayers<T extends $ZodType>(input: T) {
+  let current = input as $ZodType
+  let unwrapped = unwrapNestedZod(input) as $ZodType
 
   while (unwrapped !== current) {
     yield current

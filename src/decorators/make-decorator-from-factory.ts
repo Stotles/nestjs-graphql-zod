@@ -1,4 +1,4 @@
-import type { ZodObject } from 'zod'
+import type { $ZodObject } from 'zod/v4/core'
 import type { DynamicZodModelClass, TypeOptionInputMethodDecoratorFactory } from './types'
 import type { SupportedOptionTypes, WrapWithZodOptions } from './zod-options-wrapper.interface'
 
@@ -13,7 +13,7 @@ import type { SupportedOptionTypes, WrapWithZodOptions } from './zod-options-wra
  * @returns {MethodDecorator} A decorator.
  * @export
  */
-export function makeDecoratorFromFactory<T extends ZodObject, O extends SupportedOptionTypes>(
+export function makeDecoratorFromFactory<T extends $ZodObject, O extends SupportedOptionTypes>(
   nameOrOptions: WrapWithZodOptions<O, T> | string | undefined,
   decoratorFactory: TypeOptionInputMethodDecoratorFactory<O>,
   model: DynamicZodModelClass<T>,

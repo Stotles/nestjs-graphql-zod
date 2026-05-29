@@ -1,4 +1,4 @@
-import { output, ZodType } from 'zod'
+import { output, $ZodType, parse, safeParse } from 'zod/v4/core'
 
 import { getZodDefaultValue } from './generate-defaults'
 
@@ -10,14 +10,14 @@ import type { IModelFromZodOptions } from '../model-from-zod'
  *
  * @template T The type of the target object.
  * @param {keyof T} key The key of the property that is being created.
- * @param {ZodType} input The zod object input.
+ * @param {$ZodType} input The zod object input.
  * @param {IModelFromZodOptions<T>} opts The options.
  * @returns {PropertyDescriptor} A {@link PropertyDescriptor}.
  * @export
  */
-export function createZodPropertyDescriptor<T extends ZodType>(
+export function createZodPropertyDescriptor<T extends $ZodType>(
   key: string | keyof output<T>,
-  input: ZodType,
+  input: $ZodType,
   opts: IModelFromZodOptions<T>,
 ): PropertyDescriptor {
   let localVariable: any = getZodDefaultValue(input)
@@ -41,7 +41,11 @@ export function createZodPropertyDescriptor<T extends ZodType>(
     },
     set(newValue) {
       if (safe) {
-        const result = input.safeParse(newValue, keyProps)
+        // The third arg of core's `safeParse` is `ParseContext`, not the loose
+        // `Record<string, unknown>` historically threaded through `onParsing`.
+        // The library's classic-era surface accepted arbitrary props here, so
+        // we keep the loose passthrough via `as any`.
+        const result = safeParse(input, newValue, keyProps as any)
         if (result.success) {
           localVariable = result.data
         } else {
@@ -67,13 +71,13 @@ export function createZodPropertyDescriptor<T extends ZodType>(
       } else {
         if (doNotThrow) {
           try {
-            const result = input.parse(newValue, keyProps)
+            const result = parse(input, newValue, keyProps as any)
             localVariable = result
           } catch {
             localVariable = undefined
           }
         } else {
-          const result = input.parse(newValue, keyProps)
+          const result = parse(input, newValue, keyProps as any)
           localVariable = result
         }
       }

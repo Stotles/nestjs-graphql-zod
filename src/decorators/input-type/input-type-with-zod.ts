@@ -4,7 +4,7 @@ import { extractNameAndDescription, parseShape } from '../../helpers'
 import { ZodObjectKey } from '../../helpers/constants'
 import { describeZodSchema } from '../../helpers/describe-zod-schema'
 
-import type { ZodObject } from 'zod'
+import type { $ZodObject } from 'zod/v4/core'
 import type { Options } from './options.inteface'
 
 /**
@@ -17,7 +17,7 @@ import type { Options } from './options.inteface'
  * @returns {ClassDecorator} A {@link ClassDecorator}.
  * @export
  */
-export function InputTypeWithZod<T extends ZodObject>(input: T): ClassDecorator
+export function InputTypeWithZod<T extends $ZodObject>(input: T): ClassDecorator
 
 /**
  * Decorator that marks a class as a GraphQL input type.
@@ -30,7 +30,10 @@ export function InputTypeWithZod<T extends ZodObject>(input: T): ClassDecorator
  * @returns {ClassDecorator} A {@link ClassDecorator}.
  * @export
  */
-export function InputTypeWithZod<T extends ZodObject>(input: T, options: Options<T>): ClassDecorator
+export function InputTypeWithZod<T extends $ZodObject>(
+  input: T,
+  options: Options<T>,
+): ClassDecorator
 
 /**
  * Decorator that marks a class as a GraphQL input type.
@@ -44,13 +47,13 @@ export function InputTypeWithZod<T extends ZodObject>(input: T, options: Options
  * @returns {ClassDecorator} A {@link ClassDecorator}.
  * @export
  */
-export function InputTypeWithZod<T extends ZodObject>(
+export function InputTypeWithZod<T extends $ZodObject>(
   input: T,
   name: string,
   options?: Options<T>,
 ): ClassDecorator
 
-export function InputTypeWithZod<T extends ZodObject>(
+export function InputTypeWithZod<T extends $ZodObject>(
   input: T,
   nameOrOptions?: string | Options<T>,
   options?: Options<T>,

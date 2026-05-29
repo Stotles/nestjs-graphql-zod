@@ -1,4 +1,4 @@
-import { ZodError, ZodType } from 'zod'
+import { $ZodError, $ZodType, parseAsync } from 'zod/v4/core'
 
 import {
   ArgumentMetadata,
@@ -19,7 +19,7 @@ const isIndexable = (v: unknown): v is Record<PropertyKey, unknown> =>
  * @export
  * @implements {PipeTransform}
  */
-export class ZodValidatorPipe<T extends ZodType> implements PipeTransform {
+export class ZodValidatorPipe<T extends $ZodType> implements PipeTransform {
   constructor(
     protected readonly input: T,
     protected readonly klass?: Type<any>,
@@ -27,9 +27,9 @@ export class ZodValidatorPipe<T extends ZodType> implements PipeTransform {
 
   async transform(value: any, _metadata: ArgumentMetadata): Promise<any> {
     try {
-      return await this.input.parseAsync(value)
+      return await parseAsync(this.input, value)
     } catch (error_) {
-      const error = error_ as ZodError
+      const error = error_ as $ZodError
 
       const message = error.issues.map((issue) => {
         const property = issue.path.length ? String(issue.path[0]) : ''

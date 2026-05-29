@@ -1,4 +1,4 @@
-import type { ZodType } from 'zod'
+import type { $ZodType } from 'zod/v4/core'
 
 import { getDescription } from './get-description'
 
@@ -7,7 +7,7 @@ import { getDescription } from './get-description'
  * human-readable identifier is available. The explicit name from options takes precedence over the
  * schema's own description.
  */
-export function describeZodSchema(input: ZodType, explicitName?: string): string {
+export function describeZodSchema(input: $ZodType, explicitName?: string): string {
   const label = explicitName ?? getDescription(input)
   return label ? ` for zod schema '${label}'` : ''
 }

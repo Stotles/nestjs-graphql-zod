@@ -1,6 +1,6 @@
 import type { IModelFromZodOptions } from '../model-from-zod'
 import type { ArgsOptions, BaseTypeOptions, InputTypeOptions } from '@nestjs/graphql'
-import type { ZodType } from 'zod'
+import type { $ZodType } from 'zod/v4/core'
 
 /** Defines the supported option types by the library. */
 export type SupportedOptionTypes = BaseTypeOptions | InputTypeOptions | ArgsOptions
@@ -11,11 +11,11 @@ export type SupportedOptionTypes = BaseTypeOptions | InputTypeOptions | ArgsOpti
  * This type extends the option types for NestJS and adds common properties which will be used by
  * this library.
  */
-export type WrapWithZodOptions<O extends SupportedOptionTypes, T extends ZodType = ZodType> = O &
+export type WrapWithZodOptions<O extends SupportedOptionTypes, T extends $ZodType = $ZodType> = O &
   BaseOptions<T>
 
 /** The base options for providing `zod` property containing options. */
-export interface BaseOptions<T extends ZodType> {
+export interface BaseOptions<T extends $ZodType> {
   /**
    * Options for model creation from `zod`.
    *

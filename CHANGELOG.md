@@ -8,7 +8,7 @@ The sections are in descending order of the change date.
 
 ### Added
 
-- Support for `zod` v4.
+- Support for `zod` v4 via `zod/v4/core`.
 - Improve error handling by informing which schema caused the error, not just the error message and potentially the key.
 - Allow overriding the generated GraphQL types via `.meta(...)`. This is designed to help users with complex schemas that can't be automatically mapped to a GraphQL type. See the [README](./README.md) for more details.
 

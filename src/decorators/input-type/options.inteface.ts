@@ -1,5 +1,5 @@
 import type { InputTypeOptions } from '@nestjs/graphql'
-import type { ZodType } from 'zod'
+import type { $ZodType } from 'zod/v4/core'
 
 import type { WrapWithZodOptions } from '../zod-options-wrapper.interface'
 
@@ -11,7 +11,7 @@ import type { WrapWithZodOptions } from '../zod-options-wrapper.interface'
  * @export
  * @interface Options
  */
-export interface Options<T extends ZodType> extends WrapWithZodOptions<InputTypeOptions, T> {
+export interface Options<T extends $ZodType> extends WrapWithZodOptions<InputTypeOptions, T> {
   /**
    * The name of the {@link InputType}.
    *

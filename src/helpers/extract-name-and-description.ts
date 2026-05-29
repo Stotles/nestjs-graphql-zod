@@ -1,7 +1,7 @@
 import { getAndIncreaseRegisterCount } from './constants'
 import { getDescription } from './get-description'
 
-import type { ZodType } from 'zod'
+import type { $ZodType } from 'zod/v4/core'
 import type { IModelFromZodOptions } from '../model-from-zod'
 
 /**
@@ -14,7 +14,7 @@ import type { IModelFromZodOptions } from '../model-from-zod'
  *   description info.
  * @export
  */
-export function extractNameAndDescription<T extends ZodType>(
+export function extractNameAndDescription<T extends $ZodType>(
   zodInput: T,
   options: IModelFromZodOptions<T>,
 ) {

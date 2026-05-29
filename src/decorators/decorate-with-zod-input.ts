@@ -2,7 +2,7 @@ import type { BaseOptions } from './zod-options-wrapper.interface'
 import type { DynamicZodModelClass } from './types'
 
 import { plainToInstance } from 'class-transformer'
-import { ZodObject, ZodError } from 'zod'
+import { $ZodObject, $ZodError, parseAsync, safeParse } from 'zod/v4/core'
 
 import { BadRequestException } from '@nestjs/common'
 
@@ -20,7 +20,7 @@ type Fn = (...args: any) => any
  * @returns {F}
  * @export
  */
-export function decorateWithZodInput<T extends ZodObject, F extends Fn = Fn>(
+export function decorateWithZodInput<T extends $ZodObject, F extends Fn = Fn>(
   originalFunction: F,
   input: T,
   model: DynamicZodModelClass<T>,
@@ -38,17 +38,17 @@ export function decorateWithZodInput<T extends ZodObject, F extends Fn = Fn>(
 
     if (result instanceof Promise) {
       return result
-        .then((output) => input.parseAsync(output))
+        .then((output) => parseAsync(input, output))
         .then((output) => (parseToInstance ? plainToInstance(model, output) : output))
-        .catch((error: Error | ZodError) => {
-          if (error instanceof ZodError) {
+        .catch((error: Error | $ZodError) => {
+          if (error instanceof $ZodError) {
             throw new BadRequestException(error.issues)
           } else {
             throw error
           }
         })
     } else {
-      const parseResult = input.safeParse(result)
+      const parseResult = safeParse(input, result)
       if (parseResult.success) {
         return parseToInstance ? plainToInstance(model, parseResult.data) : parseResult.data
       } else {
