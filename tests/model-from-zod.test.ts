@@ -1,14 +1,21 @@
 import 'reflect-metadata'
 import { describe, it, expect } from 'vitest'
 import { z } from 'zod'
-import { _getCachedClass, _getModelFromZodDepth, modelFromZod, modelFromZodBase } from '../src/model-from-zod'
+import {
+  _getCachedClass,
+  _getModelFromZodDepth,
+  modelFromZod,
+  modelFromZodBase,
+} from '../src/model-from-zod'
 
 describe('modelFromZod', () => {
   it('should create a class from a simple object schema', () => {
-    const schema = z.object({
-      name: z.string(),
-      age: z.number(),
-    }).describe('Person: A person entity')
+    const schema = z
+      .object({
+        name: z.string(),
+        age: z.number(),
+      })
+      .describe('Person: A person entity')
 
     const Model = modelFromZod(schema, { name: 'Person' })
     expect(Model).toBeDefined()
@@ -16,9 +23,11 @@ describe('modelFromZod', () => {
   })
 
   it('should create an instance with property descriptors', () => {
-    const schema = z.object({
-      name: z.string(),
-    }).describe('SimpleModel: test')
+    const schema = z
+      .object({
+        name: z.string(),
+      })
+      .describe('SimpleModel: test')
 
     const Model = modelFromZod(schema, { name: 'SimpleModel_Test' })
     const instance = new Model()
@@ -27,22 +36,26 @@ describe('modelFromZod', () => {
   })
 
   it('should validate on set by default', () => {
-    const schema = z.object({
-      count: z.number(),
-    }).describe('ValidatedModel: test')
+    const schema = z
+      .object({
+        count: z.number(),
+      })
+      .describe('ValidatedModel: test')
 
     const Model = modelFromZod(schema, { name: 'ValidatedModel_Test' })
     const instance = new Model()
 
     expect(() => {
-      ;instance.count = ('not a number' as unknown as number)
+      instance.count = 'not a number' as unknown as number
     }).toThrow()
   })
 
   it('should handle default values', () => {
-    const schema = z.object({
-      greeting: z.string().default('hello'),
-    }).describe('DefaultModel: test')
+    const schema = z
+      .object({
+        greeting: z.string().default('hello'),
+      })
+      .describe('DefaultModel: test')
 
     const Model = modelFromZod(schema, { name: 'DefaultModel_Test' })
     const instance = new Model()
@@ -50,58 +63,70 @@ describe('modelFromZod', () => {
   })
 
   it('should handle optional fields', () => {
-    const schema = z.object({
-      name: z.string(),
-      nickname: z.string().optional(),
-    }).describe('OptionalModel: test')
+    const schema = z
+      .object({
+        name: z.string(),
+        nickname: z.string().optional(),
+      })
+      .describe('OptionalModel: test')
 
     const Model = modelFromZod(schema, { name: 'OptionalModel_Test' })
     expect(Model).toBeDefined()
   })
 
   it('should handle nested objects', () => {
-    const schema = z.object({
-      address: z.object({
-        city: z.string(),
-        zip: z.string(),
-      }),
-    }).describe('NestedModel: test')
+    const schema = z
+      .object({
+        address: z.object({
+          city: z.string(),
+          zip: z.string(),
+        }),
+      })
+      .describe('NestedModel: test')
 
     const Model = modelFromZod(schema, { name: 'NestedModel_Test' })
     expect(Model).toBeDefined()
   })
 
   it('should handle arrays', () => {
-    const schema = z.object({
-      tags: z.array(z.string()),
-    }).describe('ArrayModel: test')
+    const schema = z
+      .object({
+        tags: z.array(z.string()),
+      })
+      .describe('ArrayModel: test')
 
     const Model = modelFromZod(schema, { name: 'ArrayModel_Test' })
     expect(Model).toBeDefined()
   })
 
   it('should handle enums', () => {
-    const schema = z.object({
-      status: z.enum(['active', 'inactive']),
-    }).describe('EnumModel: test')
+    const schema = z
+      .object({
+        status: z.enum(['active', 'inactive']),
+      })
+      .describe('EnumModel: test')
 
     const Model = modelFromZod(schema, { name: 'EnumModel_Test' })
     expect(Model).toBeDefined()
   })
 
   it('should handle int type', () => {
-    const schema = z.object({
-      count: z.number().int(),
-    }).describe('IntModel: test')
+    const schema = z
+      .object({
+        count: z.number().int(),
+      })
+      .describe('IntModel: test')
 
     const Model = modelFromZod(schema, { name: 'IntModel_Test' })
     expect(Model).toBeDefined()
   })
 
   it('should cache generated classes for same schema', () => {
-    const schema = z.object({
-      id: z.string(),
-    }).describe('CachedModel: test')
+    const schema = z
+      .object({
+        id: z.string(),
+      })
+      .describe('CachedModel: test')
 
     const Model1 = modelFromZod(schema, { name: 'CachedModel_Test' })
     const Model2 = modelFromZod(schema, { name: 'CachedModel_Test' })
@@ -109,11 +134,15 @@ describe('modelFromZod', () => {
   })
 
   it('should not share cached classes across input and output directions', () => {
-    const schema = z.object({
-      id: z.string(),
-    }).describe('CrossDirectionModel: test')
+    const schema = z
+      .object({
+        id: z.string(),
+      })
+      .describe('CrossDirectionModel: test')
 
-    const noop: ClassDecorator = () => { /* no-op */ }
+    const noop: ClassDecorator = () => {
+      /* no-op */
+    }
 
     // Verify these are empty to start with so we can verify the test worked.
     expect(_getCachedClass(schema, 'output')).toBeUndefined()
@@ -135,9 +164,11 @@ describe('modelFromZod', () => {
   })
 
   it('should respect safe parse option', () => {
-    const schema = z.object({
-      name: z.string(),
-    }).describe('SafeModel: test')
+    const schema = z
+      .object({
+        name: z.string(),
+      })
+      .describe('SafeModel: test')
 
     const Model = modelFromZod(schema, {
       name: 'SafeModel_Test',
@@ -145,7 +176,7 @@ describe('modelFromZod', () => {
       doNotThrow: true,
     })
     const instance = new Model()
-    ;instance.name = (42 as unknown as string)
+    instance.name = 42 as unknown as string
     expect(instance.name).toBeUndefined()
   })
 
@@ -159,7 +190,9 @@ describe('modelFromZod', () => {
       })
     }
     const infiniteLoop = makeFreshObject()
-    const noop: ClassDecorator = () => { /* no-op */ }
+    const noop: ClassDecorator = () => {
+      /* no-op */
+    }
 
     // Verify these are empty to start with so we can verify the test worked.
     expect(_getModelFromZodDepth()).toBe(0)
@@ -168,10 +201,10 @@ describe('modelFromZod', () => {
     expect(() =>
       modelFromZodBase(
         infiniteLoop,
-        { name: 'InfiniteLoop', getDecorator: () => noop } as any,
+        { name: 'InfiniteLoop', getDecorator: () => noop },
         noop,
         'output',
-      )
+      ),
     ).toThrow(/MAX_ZOD_DEPTH/)
 
     // Verify the `finally` block in every recursion frame has run, restoring
@@ -187,10 +220,14 @@ describe('modelFromZod', () => {
 
   it('should handle a recursive ZodObject via z.lazy without stack-overflow', () => {
     type SelfType = { id: string; children: SelfType[] }
-    const Self: z.ZodType<SelfType> = z.object({
-      id: z.string(),
-      get children() { return z.array(z.lazy(() => Self)) },
-    }).describe('Self: a recursive node') as z.ZodType<SelfType>
+    const Self: z.ZodType<SelfType> = z
+      .object({
+        id: z.string(),
+        get children() {
+          return z.array(z.lazy(() => Self))
+        },
+      })
+      .describe('Self: a recursive node') as z.ZodType<SelfType>
 
     // Verify these are empty to start with so we can verify the test worked.
     expect(_getModelFromZodDepth()).toBe(0)

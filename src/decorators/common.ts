@@ -3,14 +3,14 @@ import type { WrapWithZodOptions } from './zod-options-wrapper.interface'
 import type { TypeProvider } from '../types/type-provider'
 import type { EnumProvider } from '../types/enum-provider'
 
-import type { ZodObject } from 'zod'
+import type { $ZodObject } from 'zod/v4/core'
 import type { BaseTypeOptions } from '@nestjs/graphql'
 
 import { IModelFromZodOptions, modelFromZod } from '../model-from-zod'
 import { decorateWithZodInput } from './decorate-with-zod-input'
 import { makeDecoratorFromFactory } from './make-decorator-from-factory'
 
-type BaseOptions<T extends ZodObject> = WrapWithZodOptions<BaseTypeOptions, T>
+type BaseOptions<T extends $ZodObject> = WrapWithZodOptions<BaseTypeOptions, T>
 
 let DEFAULT_TYPE_PROVIDER: TypeProvider | undefined
 let DEFAULT_ENUM_PROVIDER: EnumProvider | undefined
@@ -18,42 +18,37 @@ let DEFAULT_ENUM_PROVIDER: EnumProvider | undefined
 /**
  * Returns a method decorator that is built with `zod` validation object.
  *
- * @export
  * @template T The type of the `zod` validation object.
  * @param {T} input The `zod` validation object.
- * @param {(string | BaseOptions<T> | undefined)} nameOrOptions The name or
- * the options.
- *
- * @param {TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>} graphqlDecoratorFactory The actual
- * decorator factory function.
- *
- * @param {DynamicZodModelClass<T>} model The dynamically built model class from
- * `zod` validation object.
- *
- * @return {MethodDecorator} A method decorator.
+ * @param {string | BaseOptions<T> | undefined} nameOrOptions The name or the options.
+ * @param {TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>} graphqlDecoratorFactory The
+ *   actual decorator factory function.
+ * @param {DynamicZodModelClass<T>} model The dynamically built model class from `zod` validation
+ *   object.
+ * @returns {MethodDecorator} A method decorator.
+ * @export
  */
-export function MethodWithZodModel<T extends ZodObject>(
+export function MethodWithZodModel<T extends $ZodObject>(
   input: T,
   nameOrOptions: string | BaseOptions<T> | undefined,
   graphqlDecoratorFactory: TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>,
-  model: DynamicZodModelClass<T>
+  model: DynamicZodModelClass<T>,
 ): MethodDecorator {
   return function _ModelWithZod(
     target: Record<PropertyKey, any>,
     methodName: string | symbol,
-    descriptor: PropertyDescriptor
+    descriptor: PropertyDescriptor,
   ) {
     let newDescriptor = descriptor || {}
 
-    const originalFunction = descriptor?.value ?? target[ methodName ]
+    const originalFunction = descriptor?.value ?? target[methodName]
 
     let decorationProps: typeof nameOrOptions
     if (typeof nameOrOptions === 'string') {
       decorationProps = {
         zod: { parseToInstance: true },
       }
-    }
-    else {
+    } else {
       decorationProps = nameOrOptions
     }
 
@@ -65,11 +60,7 @@ export function MethodWithZodModel<T extends ZodObject>(
       Object.defineProperty(target, methodName, newDescriptor)
     }
 
-    const methodDecorator = makeDecoratorFromFactory(
-      nameOrOptions,
-      graphqlDecoratorFactory,
-      model
-    )
+    const methodDecorator = makeDecoratorFromFactory(nameOrOptions, graphqlDecoratorFactory, model)
 
     methodDecorator(target, methodName, newDescriptor)
   }
@@ -78,21 +69,18 @@ export function MethodWithZodModel<T extends ZodObject>(
 /**
  * Returns a method decorator that is built with `zod` validation object.
  *
- * @export
  * @template T The type of the `zod` validation object.
  * @param {T} input The `zod` validation object.
- * @param {(string | BaseOptions<T> | undefined)} nameOrOptions The name or
- * the options.
- *
- * @param {TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>} graphqlDecoratorFactory The actual
- * decorator factory function.
- *
- * @return {MethodDecorator} A method decorator.
+ * @param {string | BaseOptions<T> | undefined} nameOrOptions The name or the options.
+ * @param {TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>} graphqlDecoratorFactory The
+ *   actual decorator factory function.
+ * @returns {MethodDecorator} A method decorator.
+ * @export
  */
-export function MethodWithZod<T extends ZodObject>(
+export function MethodWithZod<T extends $ZodObject>(
   input: T,
   nameOrOptions: string | BaseOptions<T> | undefined,
-  graphqlDecoratorFactory: TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>
+  graphqlDecoratorFactory: TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>,
 ) {
   let zodOptions: IModelFromZodOptions<T> | undefined
 
@@ -104,26 +92,25 @@ export function MethodWithZod<T extends ZodObject>(
     input,
     nameOrOptions,
     graphqlDecoratorFactory,
-    modelFromZod(input, zodOptions) as DynamicZodModelClass<T>
+    modelFromZod(input, zodOptions) as DynamicZodModelClass<T>,
   )
 }
 
 /**
  * Sets the default type provider for custom GraphQL Scalars.
  *
- * @export
  * @param {TypeProvider} fn The type provider.
+ * @export
  */
 export function setDefaultTypeProvider(fn: TypeProvider) {
   DEFAULT_TYPE_PROVIDER = fn
 }
 
 /**
- * Gets the default type provided set previously
- * via {@link setDefaultTypeProvider}.
+ * Gets the default type provided set previously via {@link setDefaultTypeProvider}.
  *
+ * @returns {TypeProvider | undefined} The default type provider.
  * @export
- * @return {TypeProvider | undefined} The default type provider.
  */
 export function getDefaultTypeProvider(): TypeProvider | undefined {
   return DEFAULT_TYPE_PROVIDER
@@ -132,19 +119,18 @@ export function getDefaultTypeProvider(): TypeProvider | undefined {
 /**
  * Sets the default enum provider for custom GraphQL Scalars.
  *
- * @export
  * @param {EnumProvider} fn The enum provider.
+ * @export
  */
 export function setDefaultEnumProvider(fn: EnumProvider) {
   DEFAULT_ENUM_PROVIDER = fn
 }
 
 /**
- * Gets the default enum provided set previously
- * via {@link setDefaultEnumProvider}.
+ * Gets the default enum provided set previously via {@link setDefaultEnumProvider}.
  *
+ * @returns {EnumProvider | undefined} The default enum provider.
  * @export
- * @return {EnumProvider | undefined} The default enum provider.
  */
 export function getDefaultEnumProvider(): EnumProvider | undefined {
   return DEFAULT_ENUM_PROVIDER

@@ -45,17 +45,17 @@ describe('ZodValidatorPipe', () => {
     const pipe = new ZodValidatorPipe(schema)
 
     try {
-      await pipe.transform({ items: [ { name: 'ok' }, { name: 123 } ] }, metadata)
+      await pipe.transform({ items: [{ name: 'ok' }, { name: 123 }] }, metadata)
       expect.fail('Should have thrown')
     } catch (err) {
       expect(err).toBeInstanceOf(BadRequestException)
       const response = (err as BadRequestException).getResponse() as { message: any[] }
-      const [ top ] = response.message
+      const [top] = response.message
       expect(top.property).toBe('items')
       expect(top.value).toBe(123)
-      expect(top.children?.[ 0 ].property).toBe('1')
-      expect(top.children?.[ 0 ].children?.[ 0 ].property).toBe('name')
-      expect(top.children?.[ 0 ].children?.[ 0 ].value).toBe(123)
+      expect(top.children?.[0].property).toBe('1')
+      expect(top.children?.[0].children?.[0].property).toBe('name')
+      expect(top.children?.[0].children?.[0].value).toBe(123)
     }
   })
 
@@ -77,14 +77,14 @@ describe('ZodValidatorPipe', () => {
     } catch (err) {
       expect(err).toBeInstanceOf(BadRequestException)
       const response = (err as BadRequestException).getResponse() as { message: any[] }
-      const [ top ] = response.message
+      const [top] = response.message
       expect(top.property).toBe('a')
       expect(top.value).toBe(42)
 
-      let node = top.children?.[ 0 ]
-      for (const property of [ 'b', 'c', 'd' ]) {
+      let node = top.children?.[0]
+      for (const property of ['b', 'c', 'd']) {
         expect(node?.property).toBe(property)
-        node = node?.children?.[ 0 ]
+        node = node?.children?.[0]
       }
     }
   })
@@ -93,7 +93,7 @@ describe('ZodValidatorPipe', () => {
     const schema = z.object({ name: z.string() }).superRefine((_data, ctx) => {
       ctx.addIssue({
         code: 'custom',
-        path: [ 'name', 'nope' ],
+        path: ['name', 'nope'],
         message: 'custom failure past a primitive',
       })
     })
@@ -105,11 +105,11 @@ describe('ZodValidatorPipe', () => {
     } catch (err) {
       expect(err).toBeInstanceOf(BadRequestException)
       const response = (err as BadRequestException).getResponse() as { message: any[] }
-      const [ top ] = response.message
+      const [top] = response.message
       expect(top.property).toBe('name')
       expect(top.value).toBeUndefined()
-      expect(top.children?.[ 0 ].property).toBe('nope')
-      expect(top.children?.[ 0 ].value).toBeUndefined()
+      expect(top.children?.[0].property).toBe('nope')
+      expect(top.children?.[0].value).toBeUndefined()
     }
   })
 
@@ -122,7 +122,7 @@ describe('ZodValidatorPipe', () => {
     } catch (err) {
       expect(err).toBeInstanceOf(BadRequestException)
       const response = (err as BadRequestException).getResponse() as { message: any[] }
-      const [ top ] = response.message
+      const [top] = response.message
       expect(top.property).toBe('')
       expect(top.children).toBeUndefined()
       expect(top.value).toBe(123)
@@ -134,15 +134,15 @@ describe('ZodValidatorPipe', () => {
     const pipe = new ZodValidatorPipe(schema)
 
     try {
-      await pipe.transform([ { name: 'ok' }, { name: 123 } ], metadata)
+      await pipe.transform([{ name: 'ok' }, { name: 123 }], metadata)
       expect.fail('Should have thrown')
     } catch (err) {
       expect(err).toBeInstanceOf(BadRequestException)
       const response = (err as BadRequestException).getResponse() as { message: any[] }
-      const [ top ] = response.message
+      const [top] = response.message
       expect(top.property).toBe('1')
-      expect(top.children?.[ 0 ].property).toBe('name')
-      expect(top.children?.[ 0 ].value).toBe(123)
+      expect(top.children?.[0].property).toBe('name')
+      expect(top.children?.[0].value).toBe(123)
     }
   })
 })

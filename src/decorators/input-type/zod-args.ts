@@ -1,4 +1,4 @@
-import { ZodObject, ZodType, output } from 'zod'
+import { $ZodObject, $ZodType, output } from 'zod/v4/core'
 
 import { PipeTransform, Type } from '@nestjs/common'
 import { Args, ArgsOptions } from '@nestjs/graphql'
@@ -21,47 +21,42 @@ type CustomDecoratorOptions = {
    * Gets the scalar type for given type name.
    *
    * @param {string} typeName The type name corresponding to the zod object.
-   * @return {GraphQLScalarType} The scalar type for the zod object.
+   * @returns {GraphQLScalarType} The scalar type for the zod object.
    */
   getScalarTypeFor?: TypeProvider
 
   /**
-   * Provides a name for nested classes when they are created dynamically from
-   * object properties of zod types.
-   *
-   * @param {string} parentName The parent class name.
-   * @param {string} propertyKey The property key/name.
-   * @return {(string | undefined)} The name to set for the class. If
-   * any value returned other than a `string`, the class name will be generated
-   * automatically.
+   * Provides a name for nested classes when they are created dynamically from object properties of
+   * zod types.
    *
    * @memberof IModelFromZodOptions
-  */
-  provideNameForNestedClass?(parentName: string, propertyKey: string): string | undefined
+   * @param {string} parentName The parent class name.
+   * @param {string} propertyKey The property key/name.
+   * @returns {string | undefined} The name to set for the class. If any value returned other than a
+   *   `string`, the class name will be generated automatically.
+   */
+  provideNameForNestedClass?: (parentName: string, propertyKey: string) => string | undefined
 
   /**
    * Gets an enum type for given information.
    *
-   * Use this function to prevent creating different enums in GraphQL schema
-   * if you are going to use same values in different places.
-   *
-   * @param {string | undefined} name The parent name that contains the enum
-   * type.
-   * @param {string} key The property name of the enum.
-   * @param {(Record<string, string | number>)} enumObject The enum object
-   * that is extracted from the zod.
-   * @return {(Record<string, string | number> | undefined)} The enum
-   * that will be used instead of creating a new one. If `undefined` is
-   * returned, then a new enum will be created.
+   * Use this function to prevent creating different enums in GraphQL schema if you are going to use
+   * same values in different places.
    *
    * @memberof IModelFromZodOptions
+   * @param {string | undefined} name The parent name that contains the enum type.
+   * @param {string} key The property name of the enum.
+   * @param {Record<string, string | number>} enumObject The enum object that is extracted from the
+   *   zod.
+   * @returns {Record<string, string | number> | undefined} The enum that will be used instead of
+   *   creating a new one. If `undefined` is returned, then a new enum will be created.
    */
   getEnumType?: EnumProvider
 }
 
 type DecoratorOptions = ArgsOptions & CustomDecoratorOptions
 
-let GENERATED_TYPES: WeakMap<ZodType, object> | undefined
+let GENERATED_TYPES: WeakMap<$ZodType, object> | undefined
 let USED_NAMES: string[] | undefined
 
 /**
@@ -70,13 +65,15 @@ let USED_NAMES: string[] | undefined
  * @template T The type of the zod object passed.
  * @param {T} input The zod scheme object.
  * @param {CustomDecoratorOptions} options The custom decorator options.
- * @return {*} The newly or previously created class instance.
+ * @returns {any} The newly or previously created class instance.
  */
-function _getOrCreateRegisteredType<T extends ZodObject>(
+function _getOrCreateRegisteredType<T extends $ZodObject>(
   input: T,
-  options: CustomDecoratorOptions
+  options: CustomDecoratorOptions,
 ) {
-  if (!GENERATED_TYPES) { GENERATED_TYPES = new WeakMap() }
+  if (!GENERATED_TYPES) {
+    GENERATED_TYPES = new WeakMap()
+  }
   let RegisteredType = GENERATED_TYPES.get(input) as Type<output<T>> | undefined
   if (RegisteredType) return RegisteredType
 
@@ -91,7 +88,7 @@ function _getOrCreateRegisteredType<T extends ZodObject>(
       getEnumType: options.getEnumType,
       getScalarTypeFor: options.getScalarTypeFor,
       provideNameForNestedClass: options.provideNameForNestedClass,
-    }
+    },
   })
 
   GENERATED_TYPES.set(input, RegisteredType)
@@ -99,19 +96,23 @@ function _getOrCreateRegisteredType<T extends ZodObject>(
 }
 
 /**
- * Checks if the name is used before, in that case, adds a suffix of `_{number}`
- * indicating the number of times the name is used.
+ * Checks if the name is used before, in that case, adds a suffix of `_{number}` indicating the
+ * number of times the name is used.
  *
  * @param {string} name The name to check.
- * @return {string} The name that is not used in any other types before.
+ * @returns {string} The name that is not used in any other types before.
  */
 function _getSafeName(name: string): string {
-  if (!USED_NAMES) { USED_NAMES = [] }
+  if (!USED_NAMES) {
+    USED_NAMES = []
+  }
 
   let total = 0
   for (let i = 0, limit = USED_NAMES.length; i < limit; ++i) {
-    const current = USED_NAMES[ i ]
-    if (current.startsWith(name)) { ++total }
+    const current = USED_NAMES[i]
+    if (current.startsWith(name)) {
+      ++total
+    }
   }
 
   if (total) {
@@ -125,23 +126,19 @@ function _getSafeName(name: string): string {
 }
 
 /**
- * A parameter decorator that takes a `zod` validation input and marks it as
- * GraphQL `Args` with `property` name with given `options` and pipes.
+ * A parameter decorator that takes a `zod` validation input and marks it as GraphQL `Args` with
+ * `property` name with given `options` and pipes.
  *
- * @export
  * @template T The type of the `zod` validation input.
  * @param {T} input The `zod` validation schema object.
- * @param {string} property The name of the property for the GraphQL request
- * argument.
- *
+ * @param {string} property The name of the property for the GraphQL request argument.
  * @param {DecoratorOptions} options The options for {@link Args} decorator.
- * @param {...PT[]} pipes The pipes that will be passed to {@link Args}
- * decorator.
- *
- * @return {ParameterDecorator} A {@link ParameterDecorator} for GraphQL
+ * @param {...PT[]} pipes The pipes that will be passed to {@link Args} decorator.
+ * @returns {ParameterDecorator} A {@link ParameterDecorator} for GraphQL
  * argument.
+ * @export
  */
-export function ZodArgs<T extends ZodType>(
+export function ZodArgs<T extends $ZodType>(
   input: T,
   property: string,
   options: DecoratorOptions,
@@ -149,66 +146,55 @@ export function ZodArgs<T extends ZodType>(
 ): ParameterDecorator
 
 /**
- * A parameter decorator that takes a `zod` validation input and marks it as
- * GraphQL `Args` with `property` name with given `options` and pipes.
+ * A parameter decorator that takes a `zod` validation input and marks it as GraphQL `Args` with
+ * `property` name with given `options` and pipes.
  *
- * @export
  * @template T The type of the `zod` validation input.
  * @param {T} input The `zod` validation schema object.
  * @param {DecoratorOptions} options The options for {@link Args} decorator.
- * @param {...PT[]} pipes The pipes that will be passed to {@link Args}
- * decorator.
- *
- * @return {ParameterDecorator} A {@link ParameterDecorator} for GraphQL
+ * @param {...PT[]} pipes The pipes that will be passed to {@link Args} decorator.
+ * @returns {ParameterDecorator} A {@link ParameterDecorator} for GraphQL
  * argument.
+ * @export
  */
-export function ZodArgs<T extends ZodType>(
+export function ZodArgs<T extends $ZodType>(
   input: T,
   options: DecoratorOptions,
   ...pipes: PT[]
 ): ParameterDecorator
 
 /**
- * A parameter decorator that takes a `zod` validation input and marks it as
- * GraphQL `Args` with `property` name with given `options` and pipes.
+ * A parameter decorator that takes a `zod` validation input and marks it as GraphQL `Args` with
+ * `property` name with given `options` and pipes.
  *
- * @export
  * @template T The type of the `zod` validation input.
  * @param {T} input The `zod` validation schema object.
- * @param {string} property The name of the property for the GraphQL request
+ * @param {string} property The name of the property for the GraphQL request argument.
+ * @param {...PT[]} pipes The pipes that will be passed to {@link Args} decorator.
+ * @returns {ParameterDecorator} A {@link ParameterDecorator} for GraphQL
  * argument.
- *
- * @param {...PT[]} pipes The pipes that will be passed to {@link Args}
- * decorator.
- *
- * @return {ParameterDecorator} A {@link ParameterDecorator} for GraphQL
- * argument.
+ * @export
  */
-export function ZodArgs<T extends ZodType>(
+export function ZodArgs<T extends $ZodType>(
   input: T,
   property: string,
   ...pipes: PT[]
 ): ParameterDecorator
 
 /**
- * A parameter decorator that takes a `zod` validation input and marks it as
- * GraphQL `Args` with `property` name with given `options` and pipes.
+ * A parameter decorator that takes a `zod` validation input and marks it as GraphQL `Args` with
+ * `property` name with given `options` and pipes.
  *
- * @export
  * @template T The type of the `zod` validation input.
  * @param {T} input The `zod` validation schema object.
- * @param {...PT[]} pipes The pipes that will be passed to {@link Args}
- * decorator.
- *
- * @return {ParameterDecorator} A {@link ParameterDecorator} for GraphQL
+ * @param {...PT[]} pipes The pipes that will be passed to {@link Args} decorator.
+ * @returns {ParameterDecorator} A {@link ParameterDecorator} for GraphQL
  * argument.
+ * @export
  */
-export function ZodArgs<T extends ZodType>(
-  input: T,
-  ...pipes: PT[]
-): ParameterDecorator
+export function ZodArgs<T extends $ZodType>(input: T, ...pipes: PT[]): ParameterDecorator
 
-export function ZodArgs<T extends ZodType>(
+export function ZodArgs<T extends $ZodType>(
   input: T,
   propertyOrOptions?: string | DecoratorOptions | PT,
   optionsOrPipe?: DecoratorOptions | PT,
@@ -223,25 +209,20 @@ export function ZodArgs<T extends ZodType>(
     if (typeof optionsOrPipe === 'object') {
       if ('transform' in optionsOrPipe) {
         pipes.unshift(optionsOrPipe)
-      }
-      else {
+      } else {
         options = optionsOrPipe
       }
     }
-  }
-  else if (typeof propertyOrOptions === 'object') {
+  } else if (typeof propertyOrOptions === 'object') {
     if (typeof optionsOrPipe === 'object') {
       if ('transform' in optionsOrPipe) {
         pipes.unshift(optionsOrPipe)
-      }
-      else {
+      } else {
         options = optionsOrPipe
       }
-    }
-    else if ('transform' in propertyOrOptions) {
+    } else if ('transform' in propertyOrOptions) {
       pipes.unshift(propertyOrOptions)
-    }
-    else {
+    } else {
       options = propertyOrOptions
     }
   }
@@ -250,7 +231,7 @@ export function ZodArgs<T extends ZodType>(
   const { getScalarTypeFor = getDefaultTypeProvider() } = options
 
   try {
-    if (!isZodInstance(ZodObject, input)) {
+    if (!isZodInstance($ZodObject, input)) {
       pipes.unshift(new ZodValidatorPipe(input))
       const typeInfo = getFieldInfoFromZod('', input, options, 'input')
       const nullability = getNullability(typeInfo)
@@ -260,33 +241,27 @@ export function ZodArgs<T extends ZodType>(
       options.type = () => type
       options.nullable = nullability
       options.description ??= description
-    }
-    else {
-      const RegisteredType = _getOrCreateRegisteredType(
-        input,
-        {
-          getScalarTypeFor
-        }
-      )
+    } else {
+      const RegisteredType = _getOrCreateRegisteredType(input, {
+        getScalarTypeFor,
+      })
 
       pipes.unshift(new ZodValidatorPipe(input, RegisteredType))
       options.type ??= () => RegisteredType
     }
   } catch (err) {
     const propertySuffix = property ? ` for property '${property}'` : ''
-    throw new Error(
-      `ZodArgs failed${propertySuffix}${describeZodSchema(input, options.name)}`,
-      { cause: err }
-    )
+    throw new Error(`ZodArgs failed${propertySuffix}${describeZodSchema(input, options.name)}`, {
+      cause: err,
+    })
   }
 
   if (options.name) {
     return prepareDecorator(property, options, ...pipes)
-  }
-  else {
+  } else {
     return function _anonymousZodArgsWrapper(target, propKey, index) {
       options ??= {}
-      options!.name = `arg_${index}`
+      options.name = `arg_${index}`
       const decorator = prepareDecorator(property, options, ...pipes)
       decorator(target, propKey, index)
     }
@@ -299,40 +274,39 @@ export function ZodArgs<T extends ZodType>(
  * @param {string} [property] The property string.
  * @param {DecoratorOptions} [options] The decorator options.
  * @param {...PT[]} pipes The pipes to apply.
- * @return {ParameterDecorator} The built parameter decorator.
+ * @returns {ParameterDecorator} The built parameter decorator.
  */
-function prepareDecorator(property?: string, options?: DecoratorOptions, ...pipes: PT[]): ParameterDecorator {
+function prepareDecorator(
+  property?: string,
+  options?: DecoratorOptions,
+  ...pipes: PT[]
+): ParameterDecorator {
   let args: ParameterDecorator
   if (typeof property === 'string') {
     if (typeof options === 'object') {
       args = Args(property, options, ...pipes)
-    }
-    else {
+    } else {
       args = Args(property, ...pipes)
     }
-  }
-  else if (typeof options === 'object') {
+  } else if (typeof options === 'object') {
     args = Args(options, ...pipes)
-  }
-  else {
+  } else {
     args = Args(...pipes)
   }
 
   return args
 }
 
-export module ZodArgs {
-  /**
-   * A type for inferring the type of a given `zod` validation object.
-   */
-  export type Of<T extends ZodType> = output<T>
+export namespace ZodArgs {
+  /** A type for inferring the type of a given `zod` validation object. */
+  export type Of<T extends $ZodType> = output<T>
 
   /**
    * Frees the used objects during the startup.
    *
-   * The {@link ZodArgs} decorator uses helper local variables to keep the
-   * naming system working when the same scheme is used multiple times in
-   * separate decorators and same name for different schemes.
+   * The {@link ZodArgs} decorator uses helper local variables to keep the naming system working when
+   * the same scheme is used multiple times in separate decorators and same name for different
+   * schemes.
    *
    * This function should be called after the GraphQL scheme is created.
    *

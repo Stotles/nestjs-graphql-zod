@@ -37,7 +37,7 @@ export default defineConfig({
         // Match the bare `graphql` specifier exactly (so subpath imports
         // like `graphql/type/definition` keep their normal resolution).
         find: /^graphql$/,
-        replacement: path.resolve(__dirname, 'node_modules/graphql/index.js'),
+        replacement: path.resolve(import.meta.dirname, 'node_modules/graphql/index.js'),
       },
     ],
   },

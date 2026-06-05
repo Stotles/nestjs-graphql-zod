@@ -73,7 +73,7 @@ describe('generateDefaults', () => {
   it('should peel through deeply stacked wrappers', () => {
     let schema: z.ZodType = z.string().default('deep')
     for (let i = 0; i < 25; i++) {
-      schema = schema.optional().readonly().nullable() as any
+      schema = schema.optional().readonly().nullable()
     }
     expect(generateDefaults(schema)).toBe('deep')
   })
