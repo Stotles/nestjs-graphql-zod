@@ -4,6 +4,12 @@ This file contains the changes made to the package.
 
 The sections are in descending order of the change date.
 
+## [4.1.0] - Unreleased
+
+### Changed
+
+- Fixed `@ZodArgs` not outputting the default value in the generated GraphQL schema.
+
 ## [4.0.1] - 2026-06-05
 
 ### Changed

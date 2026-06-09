@@ -5,6 +5,7 @@ import { Args, ArgsOptions } from '@nestjs/graphql'
 
 import { extractNameAndDescription, getNullability } from '../../helpers'
 import { describeZodSchema } from '../../helpers/describe-zod-schema'
+import { getZodDefaultValue } from '../../helpers/generate-defaults'
 import { getDescription } from '../../helpers/get-description'
 import { getFieldInfoFromZod } from '../../helpers/get-field-info-from-zod'
 import { isZodInstance } from '../../helpers/is-zod-instance'
@@ -241,6 +242,11 @@ export function ZodArgs<T extends $ZodType>(
       options.type = () => type
       options.nullable = nullability
       options.description ??= description
+
+      const defaultValue = getZodDefaultValue(input)
+      if (defaultValue !== undefined) {
+        options.defaultValue ??= defaultValue
+      }
     } else {
       const RegisteredType = _getOrCreateRegisteredType(input, {
         getScalarTypeFor,
