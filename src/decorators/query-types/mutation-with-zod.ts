@@ -1,7 +1,7 @@
 import { Mutation, MutationOptions as MO } from '@nestjs/graphql'
 
 import { describeZodSchema } from '../../helpers/describe-zod-schema'
-import { MethodWithZod } from '../common'
+import { type ElementOf, MethodWithZod, type ZodObjectOrArray } from '../common'
 
 import type { $ZodObject } from 'zod/v4/core'
 import type { IModelFromZodOptions } from '../../model-from-zod'
@@ -27,47 +27,47 @@ export type MutationOptions<T extends $ZodObject> = MO & {
 /**
  * Mutation handler (method) Decorator. Routes specified mutation to this method.
  *
- * Uses a `zod` object.
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
  *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function MutationWithZod<T extends $ZodObject>(input: T): MethodDecorator
+export function MutationWithZod<T extends ZodObjectOrArray>(input: T): MethodDecorator
 
 /**
  * Mutation handler (method) Decorator. Routes specified mutation to this method.
  *
- * Uses a `zod` object.
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
  *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
  * @param {string} name The name of the method.
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function MutationWithZod<T extends $ZodObject>(input: T, name: string): MethodDecorator
+export function MutationWithZod<T extends ZodObjectOrArray>(input: T, name: string): MethodDecorator
 
 /**
  * Mutation handler (method) Decorator. Routes specified mutation to this method.
  *
- * Uses a `zod` object.
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
  *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
- * @param {MutationOptions<T>} options The options for query method.
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
+ * @param {MutationOptions<ElementOf<T> & $ZodObject>} options The options for mutation method.
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function MutationWithZod<T extends $ZodObject>(
+export function MutationWithZod<T extends ZodObjectOrArray>(
   input: T,
-  options: MutationOptions<T>,
+  options: MutationOptions<ElementOf<T> & $ZodObject>,
 ): MethodDecorator
 
-export function MutationWithZod<T extends $ZodObject>(
+export function MutationWithZod<T extends ZodObjectOrArray>(
   input: T,
-  nameOrOptions?: string | MutationOptions<T>,
+  nameOrOptions?: string | MutationOptions<ElementOf<T> & $ZodObject>,
 ) {
   try {
     return MethodWithZod(input, nameOrOptions, Mutation)

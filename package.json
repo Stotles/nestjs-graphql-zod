@@ -1,6 +1,6 @@
 {
   "name": "@stotles/nestjs-graphql-zod",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "description": "A library for integrating zod validation objects into nestjs graphql objects.",
   "keywords": [
     "decorator",
@@ -32,15 +32,13 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tests/tsconfig.json",
-    "prepublish": "tsc",
     "build": "tsc",
     "build-watch": "tsc --watch",
-    "release": "release-it"
+    "checks": "npm run fmt:check && npm run build && npm run typecheck && npm run lint"
   },
   "devDependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/graphql": "^13.0.0",
-    "@swc/core": "^1.15.33",
     "@types/node": "^24.12.4",
     "class-transformer": "^0.5.1",
     "graphql": "^16.12.0",
@@ -49,7 +47,6 @@
     "oxlint-tsgolint": "^0.23.0",
     "reflect-metadata": "^0.2.0",
     "typescript": "^6.0.0",
-    "unplugin-swc": "^1.5.9",
     "vitest": "^4.1.0",
     "zod": "^4.3.6"
   },

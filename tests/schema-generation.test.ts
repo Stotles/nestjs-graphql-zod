@@ -138,6 +138,11 @@ class TaskResolver {
       status: 'completed',
     }
   }
+
+  @QueryWithZod(Task.array())
+  filteredTasks(@ZodArgs(z.boolean().default(false), 'showAll') _showAll: boolean) {
+    return [{ id: '1', title: 'demo', done: false, priority: 0, status: 'active' as const }]
+  }
 }
 
 @Resolver(() => UserModel)
@@ -277,6 +282,7 @@ describe('end-to-end (e2e) schema generation', () => {
 
         """Audit logs for the system"""
         auditLogs: [AuditLog!]!
+        filteredTasks(showAll: Boolean! = false): [Task!]!
         task: Task!
         task2: Task!
         user(arg_0: UserFilter!): User!
