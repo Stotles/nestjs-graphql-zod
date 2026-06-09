@@ -4,9 +4,11 @@ import { BadRequestException } from '@nestjs/common'
 import { Subscription, SubscriptionOptions as SO } from '@nestjs/graphql'
 
 import { describeZodSchema } from '../../helpers/describe-zod-schema'
+import { isZodInstance } from '../../helpers/is-zod-instance'
 import { IModelFromZodOptions, modelFromZod } from '../../model-from-zod'
+import type { ElementOf, ZodObjectOrArray } from '../common'
 
-import { $ZodObject, $ZodError, parseAsync, safeParse } from 'zod/v4/core'
+import { $ZodArray, $ZodObject, $ZodError, parseAsync, safeParse } from 'zod/v4/core'
 
 /**
  * Options for {@link SubscriptionWithZod}, mirroring `@nestjs/graphql`'s {@link SO} (a discriminated
@@ -29,69 +31,80 @@ export type SubscriptionOptions<T extends $ZodObject> = SO & {
 /**
  * Subscription handler (method) Decorator. Routes subscriptions to this method.
  *
- * Uses a `zod` object.
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
  *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function SubscriptionWithZod<T extends $ZodObject>(input: T): MethodDecorator
+export function SubscriptionWithZod<T extends ZodObjectOrArray>(input: T): MethodDecorator
 
 /**
  * Subscription handler (method) Decorator. Routes subscriptions to this method.
  *
- * Uses a `zod` object.
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
  *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
  * @param {string} name The name of the method.
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function SubscriptionWithZod<T extends $ZodObject>(input: T, name: string): MethodDecorator
-
-/**
- * Subscription handler (method) Decorator. Routes subscriptions to this method.
- *
- * Uses a `zod` object.
- *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
- * @param {SubscriptionOptions<T>} options The options for subscription method.
- * @returns {MethodDecorator} A {@link MethodDecorator}.
- * @export
- */
-export function SubscriptionWithZod<T extends $ZodObject>(
-  input: T,
-  options: SubscriptionOptions<T>,
-): MethodDecorator
-
-/**
- * Subscription handler (method) Decorator. Routes subscriptions to this method.
- *
- * Uses a `zod` object.
- *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
- * @param {string} name The name of the method.
- * @param {Pick<SubscriptionOptions<T>, 'filter' | 'resolve' | 'zod'>} options The options for
- *   subscription method.
- * @returns {MethodDecorator} A {@link MethodDecorator}.
- * @export
- */
-export function SubscriptionWithZod<T extends $ZodObject>(
+export function SubscriptionWithZod<T extends ZodObjectOrArray>(
   input: T,
   name: string,
-  options: Pick<SubscriptionOptions<T>, 'filter' | 'resolve' | 'zod'>,
 ): MethodDecorator
 
-export function SubscriptionWithZod<T extends $ZodObject>(
+/**
+ * Subscription handler (method) Decorator. Routes subscriptions to this method.
+ *
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
+ *
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
+ * @param {SubscriptionOptions<ElementOf<T> & $ZodObject>} options The options for subscription
+ *   method.
+ * @returns {MethodDecorator} A {@link MethodDecorator}.
+ * @export
+ */
+export function SubscriptionWithZod<T extends ZodObjectOrArray>(
   input: T,
-  nameOrOptions?: string | SubscriptionOptions<T>,
-  pickedOptions?: Pick<SubscriptionOptions<T>, 'filter' | 'resolve' | 'zod'>,
+  options: SubscriptionOptions<ElementOf<T> & $ZodObject>,
+): MethodDecorator
+
+/**
+ * Subscription handler (method) Decorator. Routes subscriptions to this method.
+ *
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
+ *
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
+ * @param {string} name The name of the method.
+ * @param {Pick<SubscriptionOptions<ElementOf<T> & $ZodObject>, 'filter' | 'resolve' | 'zod'>} *
+ *   Options The options for subscription method.
+ * @returns {MethodDecorator} A {@link MethodDecorator}.
+ * @export
+ */
+export function SubscriptionWithZod<T extends ZodObjectOrArray>(
+  input: T,
+  name: string,
+  options: Pick<SubscriptionOptions<ElementOf<T> & $ZodObject>, 'filter' | 'resolve' | 'zod'>,
+): MethodDecorator
+
+export function SubscriptionWithZod<T extends ZodObjectOrArray>(
+  input: T,
+  nameOrOptions?: string | SubscriptionOptions<ElementOf<T> & $ZodObject>,
+  pickedOptions?: Pick<
+    SubscriptionOptions<ElementOf<T> & $ZodObject>,
+    'filter' | 'resolve' | 'zod'
+  >,
 ) {
-  let zodOptions: IModelFromZodOptions<T> | undefined
+  const isList = isZodInstance($ZodArray, input)
+  const element = (isList ? (input as $ZodArray)._zod.def.element : input) as ElementOf<T> &
+    $ZodObject
+
+  let zodOptions: IModelFromZodOptions<ElementOf<T> & $ZodObject> | undefined
 
   if (typeof nameOrOptions === 'object') {
     zodOptions = nameOrOptions.zod
@@ -99,14 +112,16 @@ export function SubscriptionWithZod<T extends $ZodObject>(
     zodOptions = pickedOptions.zod
   }
 
-  let model: ReturnType<typeof modelFromZod<T, IModelFromZodOptions<T>>>
+  let model: ReturnType<typeof modelFromZod>
   try {
-    model = modelFromZod(input, zodOptions)
+    model = modelFromZod(element, zodOptions)
   } catch (err) {
     throw new Error(`SubscriptionWithZod failed${describeZodSchema(input, zodOptions?.name)}`, {
       cause: err,
     })
   }
+
+  const typeFunc = isList ? () => [model] : () => model
 
   return function _SubscriptionWithZod(
     target: any,
@@ -157,15 +172,15 @@ export function SubscriptionWithZod<T extends $ZodObject>(
         // Strip the library-specific `zod` field so it doesn't leak into
         // Nest's GraphQL metadata. Mirrors the object-overload branch below.
         const { zod: _zod, ...rest } = pickedOptions
-        decorate = Subscription(() => model, { ...rest, name: nameOrOptions })
+        decorate = Subscription(typeFunc, { ...rest, name: nameOrOptions })
       } else {
-        decorate = Subscription(() => model, { name: nameOrOptions })
+        decorate = Subscription(typeFunc, { name: nameOrOptions })
       }
     } else if (typeof nameOrOptions === 'object') {
       const { zod: _zod, ...rest } = nameOrOptions
-      decorate = Subscription(() => model, rest)
+      decorate = Subscription(typeFunc, rest)
     } else {
-      decorate = Subscription(() => model)
+      decorate = Subscription(typeFunc)
     }
 
     decorate(target, methodName, descriptor)

@@ -3,12 +3,16 @@ import type { WrapWithZodOptions } from './zod-options-wrapper.interface'
 import type { TypeProvider } from '../types/type-provider'
 import type { EnumProvider } from '../types/enum-provider'
 
-import type { $ZodObject } from 'zod/v4/core'
+import { $ZodArray, type $ZodObject, type $ZodType } from 'zod/v4/core'
 import type { BaseTypeOptions } from '@nestjs/graphql'
 
+import { isZodInstance } from '../helpers/is-zod-instance'
 import { IModelFromZodOptions, modelFromZod } from '../model-from-zod'
 import { decorateWithZodInput } from './decorate-with-zod-input'
 import { makeDecoratorFromFactory } from './make-decorator-from-factory'
+
+export type ZodObjectOrArray = $ZodObject | $ZodArray<$ZodObject>
+export type ElementOf<T extends ZodObjectOrArray> = T extends $ZodArray<infer E> ? E : T
 
 type BaseOptions<T extends $ZodObject> = WrapWithZodOptions<BaseTypeOptions, T>
 
@@ -29,10 +33,11 @@ let DEFAULT_ENUM_PROVIDER: EnumProvider | undefined
  * @export
  */
 export function MethodWithZodModel<T extends $ZodObject>(
-  input: T,
+  validationSchema: $ZodType,
   nameOrOptions: string | BaseOptions<T> | undefined,
   graphqlDecoratorFactory: TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>,
   model: DynamicZodModelClass<T>,
+  isList = false,
 ): MethodDecorator {
   return function _ModelWithZod(
     target: Record<PropertyKey, any>,
@@ -52,7 +57,12 @@ export function MethodWithZodModel<T extends $ZodObject>(
       decorationProps = nameOrOptions
     }
 
-    const decoratedFunction = decorateWithZodInput(originalFunction, input, model, decorationProps)
+    const decoratedFunction = decorateWithZodInput(
+      originalFunction,
+      validationSchema,
+      model,
+      decorationProps,
+    )
 
     newDescriptor.value = decoratedFunction
 
@@ -60,7 +70,12 @@ export function MethodWithZodModel<T extends $ZodObject>(
       Object.defineProperty(target, methodName, newDescriptor)
     }
 
-    const methodDecorator = makeDecoratorFromFactory(nameOrOptions, graphqlDecoratorFactory, model)
+    const methodDecorator = makeDecoratorFromFactory(
+      nameOrOptions,
+      graphqlDecoratorFactory,
+      model,
+      isList,
+    )
 
     methodDecorator(target, methodName, newDescriptor)
   }
@@ -77,12 +92,16 @@ export function MethodWithZodModel<T extends $ZodObject>(
  * @returns {MethodDecorator} A method decorator.
  * @export
  */
-export function MethodWithZod<T extends $ZodObject>(
+export function MethodWithZod<T extends ZodObjectOrArray>(
   input: T,
-  nameOrOptions: string | BaseOptions<T> | undefined,
+  nameOrOptions: string | BaseOptions<ElementOf<T> & $ZodObject> | undefined,
   graphqlDecoratorFactory: TypeOptionInputMethodDecoratorFactory<BaseTypeOptions>,
 ) {
-  let zodOptions: IModelFromZodOptions<T> | undefined
+  const isList = isZodInstance($ZodArray, input)
+  const element = (isList ? (input as $ZodArray)._zod.def.element : input) as ElementOf<T> &
+    $ZodObject
+
+  let zodOptions: IModelFromZodOptions<ElementOf<T> & $ZodObject> | undefined
 
   if (typeof nameOrOptions === 'object') {
     zodOptions = nameOrOptions.zod
@@ -92,7 +111,8 @@ export function MethodWithZod<T extends $ZodObject>(
     input,
     nameOrOptions,
     graphqlDecoratorFactory,
-    modelFromZod(input, zodOptions) as DynamicZodModelClass<T>,
+    modelFromZod(element, zodOptions) as DynamicZodModelClass<ElementOf<T> & $ZodObject>,
+    isList,
   )
 }
 

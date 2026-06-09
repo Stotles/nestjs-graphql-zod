@@ -2,7 +2,7 @@ import type { BaseOptions } from './zod-options-wrapper.interface'
 import type { DynamicZodModelClass } from './types'
 
 import { plainToInstance } from 'class-transformer'
-import { $ZodObject, $ZodError, parseAsync, safeParse } from 'zod/v4/core'
+import { $ZodObject, $ZodError, $ZodType, parseAsync, safeParse } from 'zod/v4/core'
 
 import { BadRequestException } from '@nestjs/common'
 
@@ -14,15 +14,17 @@ type Fn = (...args: any) => any
  * @template T The type of the zod validation object.
  * @template F The type of the function that will be replaced.
  * @param {Function} originalFunction The original function which will be replaced.
- * @param {T} input The zod validation object.
+ * @param {$ZodType} input The zod validation schema (may be a `$ZodArray` wrapping a `$ZodObject`
+ *   for list return types).
  * @param {DynamicZodModelClass<T>} model The dynamically built zod class that has the validations
  *   installed.
+ * @param {BaseOptions<T>} options The options.
  * @returns {F}
  * @export
  */
 export function decorateWithZodInput<T extends $ZodObject, F extends Fn = Fn>(
   originalFunction: F,
-  input: T,
+  input: $ZodType,
   model: DynamicZodModelClass<T>,
   options?: BaseOptions<T>,
 ) {

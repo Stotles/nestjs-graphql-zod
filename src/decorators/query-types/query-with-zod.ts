@@ -1,7 +1,7 @@
 import { Query, QueryOptions as QO } from '@nestjs/graphql'
 
 import { describeZodSchema } from '../../helpers/describe-zod-schema'
-import { MethodWithZod } from '../common'
+import { type ElementOf, MethodWithZod, type ZodObjectOrArray } from '../common'
 
 import type { $ZodObject } from 'zod/v4/core'
 import type { IModelFromZodOptions } from '../../model-from-zod'
@@ -27,47 +27,47 @@ export type QueryOptions<T extends $ZodObject> = QO & {
 /**
  * Query handler (method) Decorator. Routes specified query to this method.
  *
- * Uses a `zod` object.
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
  *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function QueryWithZod<T extends $ZodObject>(input: T): MethodDecorator
+export function QueryWithZod<T extends ZodObjectOrArray>(input: T): MethodDecorator
 
 /**
  * Query handler (method) Decorator. Routes specified query to this method.
  *
- * Uses a `zod` object.
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
  *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
  * @param {string} name The name of the method.
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function QueryWithZod<T extends $ZodObject>(input: T, name: string): MethodDecorator
+export function QueryWithZod<T extends ZodObjectOrArray>(input: T, name: string): MethodDecorator
 
 /**
  * Query handler (method) Decorator. Routes specified query to this method.
  *
- * Uses a `zod` object.
+ * Uses a `zod` object or a `zod` array of objects (for list return types).
  *
- * @template T The type of the zod object input.
- * @param {T} input The zod input object.
- * @param {QueryOptions<T>} options The options for query.
+ * @template T The type of the zod object or array input.
+ * @param {T} input The zod input object or array.
+ * @param {QueryOptions<ElementOf<T> & $ZodObject>} options The options for query.
  * @returns {MethodDecorator} A {@link MethodDecorator}.
  * @export
  */
-export function QueryWithZod<T extends $ZodObject>(
+export function QueryWithZod<T extends ZodObjectOrArray>(
   input: T,
-  options: QueryOptions<T>,
+  options: QueryOptions<ElementOf<T> & $ZodObject>,
 ): MethodDecorator
 
-export function QueryWithZod<T extends $ZodObject>(
+export function QueryWithZod<T extends ZodObjectOrArray>(
   input: T,
-  nameOrOptions?: string | QueryOptions<T>,
+  nameOrOptions?: string | QueryOptions<ElementOf<T> & $ZodObject>,
 ) {
   try {
     return MethodWithZod(input, nameOrOptions, Query)

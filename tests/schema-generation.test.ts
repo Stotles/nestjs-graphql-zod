@@ -139,10 +139,8 @@ class TaskResolver {
     }
   }
 
-  @Query(() => [TaskModel])
-  filteredTasks(
-    @ZodArgs(z.boolean().default(false), 'showAll') _showAll: boolean,
-  ) {
+  @QueryWithZod(Task.array())
+  filteredTasks(@ZodArgs(z.boolean().default(false), 'showAll') _showAll: boolean) {
     return [{ id: '1', title: 'demo', done: false, priority: 0, status: 'active' as const }]
   }
 }

@@ -17,15 +17,17 @@ export function makeDecoratorFromFactory<T extends $ZodObject, O extends Support
   nameOrOptions: WrapWithZodOptions<O, T> | string | undefined,
   decoratorFactory: TypeOptionInputMethodDecoratorFactory<O>,
   model: DynamicZodModelClass<T>,
+  isList = false,
 ) {
+  const typeFunc = isList ? () => [model] : () => model
   let decorator: MethodDecorator
   if (typeof nameOrOptions === 'string') {
-    decorator = decoratorFactory(() => model, { name: nameOrOptions } as O)
+    decorator = decoratorFactory(typeFunc, { name: nameOrOptions } as O)
   } else if (typeof nameOrOptions === 'object') {
     const { zod: _zod, ...rest } = nameOrOptions
-    decorator = decoratorFactory(() => model, rest as O)
+    decorator = decoratorFactory(typeFunc, rest as O)
   } else {
-    decorator = decoratorFactory(() => model)
+    decorator = decoratorFactory(typeFunc)
   }
 
   return decorator
