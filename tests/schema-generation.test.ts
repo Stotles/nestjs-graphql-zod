@@ -89,6 +89,14 @@ const WrappedDefaultsInput = z.object({
   prefaulted: z.string().prefault('prefault_value'),
 })
 
+const Tag = z
+  .object({
+    label: z.string(),
+    color: z.string().optional(),
+  })
+  .describe('Tag: a label with optional color')
+const TagArray = z.array(Tag).describe('Tags: a list of tag')
+
 const TaskModel = modelFromZod(Task, { name: 'Task' })
 const UserModel = modelFromZod(User, { name: 'User' })
 const UserFullModel = modelFromZod(UserFull)
@@ -142,6 +150,15 @@ class TaskResolver {
   @QueryWithZod(Task.array())
   filteredTasks(@ZodArgs(z.boolean().default(false), 'showAll') _showAll: boolean) {
     return [{ id: '1', title: 'demo', done: false, priority: 0, status: 'active' as const }]
+  }
+
+  @MutationWithZod(Task)
+  tagTask(
+    @ZodArgs(z.string(), 'taskId') _taskId: string,
+    @ZodArgs(TagArray, 'tags') _tags: z.infer<typeof TagArray>,
+    @ZodArgs(Tag.array(), 'tagsAlt') _tagsAlt: z.infer<typeof Tag>[],
+  ) {
+    return { id: '1', title: 'demo', done: false, priority: 0, status: 'active' as const }
   }
 }
 
@@ -275,6 +292,14 @@ describe('end-to-end (e2e) schema generation', () => {
 
       type Mutation {
         createTask(input: TaskInput!): Task!
+        tagTask(
+          """Tags: a list of tag"""
+          tags: [Tag!]!
+
+          """Tag: a label with optional color"""
+          tagsAlt: [Tag!]!
+          taskId: String!
+        ): Task!
       }
 
       type Query {
@@ -297,6 +322,12 @@ describe('end-to-end (e2e) schema generation', () => {
 
         """Fires when a task is updated"""
         taskUpdated: Task!
+      }
+
+      """Tag: a label with optional color"""
+      input Tag {
+        color: String
+        label: String!
       }
 
       """Task: a unit of work"""

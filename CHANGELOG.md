@@ -4,6 +4,12 @@ This file contains the changes made to the package.
 
 The sections are in descending order of the change date.
 
+## [4.1.1] - 2026-06-09
+
+### Added
+
+- Support for arrays at the root level in `@ZodArgs`
+
 ## [4.1.0] - 2026-06-09
 
 ### Added

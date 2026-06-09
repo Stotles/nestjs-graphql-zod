@@ -40,6 +40,15 @@ describe('ZodArgs', () => {
     expect(typeof decorator).toBe('function')
   })
 
+  it('should handle an array of objects schema', () => {
+    const schema = z
+      .array(z.object({ label: z.string(), count: z.number() }).describe('Item: an item'))
+      .describe('Items: a list of items')
+
+    const decorator = ZodArgs(schema, 'items', {})
+    expect(typeof decorator).toBe('function')
+  })
+
   it('should free internal state', () => {
     const schema = z.object({ x: z.string() }).describe('FreeTest: test')
     ZodArgs(schema, 'input', {})
