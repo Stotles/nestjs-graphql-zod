@@ -14,6 +14,7 @@ import { EnumProvider } from '../../types/enum-provider'
 import { TypeProvider } from '../../types/type-provider'
 import { getDefaultTypeProvider } from '../common'
 import { inputFromZod } from './input-from-zod'
+import { buildInputTypeDecorator } from './input-type-with-zod'
 
 type PT<F = any, T = any> = PipeTransform<F, T> | Type<PipeTransform<F, T>>
 
@@ -234,7 +235,18 @@ export function ZodArgs<T extends $ZodType>(
   try {
     if (!isZodInstance($ZodObject, input)) {
       pipes.unshift(new ZodValidatorPipe(input))
-      const typeInfo = getFieldInfoFromZod('', input, options, 'input')
+      const typeInfo = getFieldInfoFromZod(
+        '',
+        input,
+        {
+          ...options,
+          getDecorator(zodInput: any) {
+            const { name } = extractNameAndDescription(zodInput, {})
+            return buildInputTypeDecorator(name, { description: getDescription(zodInput) })
+          },
+        },
+        'input',
+      )
       const nullability = getNullability(typeInfo)
       const description = getDescription(input)
 
