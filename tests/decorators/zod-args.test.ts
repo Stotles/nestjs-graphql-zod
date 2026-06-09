@@ -1,6 +1,8 @@
 import 'reflect-metadata'
 import { describe, it, expect, afterEach } from 'vitest'
 import { z } from 'zod'
+import { LazyMetadataStorage } from '@nestjs/graphql/dist/schema-builder/storages/lazy-metadata.storage'
+import { TypeMetadataStorage } from '@nestjs/graphql/dist/schema-builder/storages/type-metadata.storage'
 import { ZodArgs } from '../../src/decorators/input-type/zod-args'
 
 describe('ZodArgs', () => {
@@ -47,6 +49,31 @@ describe('ZodArgs', () => {
 
     const decorator = ZodArgs(schema, 'items', {})
     expect(typeof decorator).toBe('function')
+  })
+
+  it('should handle an array of objects with enums without generating __ prefixed names', () => {
+    // GraphQL reserves names starting with "__" for introspection. Enum names are
+    // built as "{parent}_{field}Enum_{n}", so the parent name must never be "_"
+    // or empty — otherwise the enum name starts with "__".
+    const enumsBefore = TypeMetadataStorage.getEnumsMetadata().length
+
+    const schema = z.array(
+      z
+        .object({
+          name: z.string(),
+          role: z.enum(['admin', 'member']).describe('Role: user role'),
+        })
+        .describe('Member: a team member'),
+    )
+    ZodArgs(schema, 'members', {})
+
+    // NestJS defers enum registration via LazyMetadataStorage — flush it so we
+    // can inspect the names that were actually registered.
+    LazyMetadataStorage.load([])
+    const newEnums = TypeMetadataStorage.getEnumsMetadata().slice(enumsBefore)
+    expect(newEnums).toHaveLength(1)
+    expect(newEnums[0].name).not.toMatch(/^__/)
+    expect(newEnums[0].name).toMatch(/^Member_RoleEnum_/)
   })
 
   it('should free internal state', () => {
