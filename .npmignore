@@ -1,2 +1,14 @@
-*lock.y[a]ml
-release.sh
+# Ignore all files by default
+*
+
+# Allow the build output
+!dist/**
+
+# Allow the changelog
+!CHANGELOG.md
+
+# npm should always include these files regardless of the ignore all above
+# but listing this explicitly just in case
+!LICENSE
+!package.json
+!README.md

@@ -4,11 +4,12 @@ This file contains the changes made to the package.
 
 The sections are in descending order of the change date.
 
-## [4.1.2] - 2026-06-09
+## [4.1.2] - 2026-06-10
 
 ### Changed
 
 - Support for enums when used with arrays at the root level in `@ZodArgs`.
+- Removed unnecessary files from the built package.
 
 ## [4.1.1] - 2026-06-09
 
