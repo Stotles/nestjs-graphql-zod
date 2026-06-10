@@ -89,10 +89,12 @@ const WrappedDefaultsInput = z.object({
   prefaulted: z.string().prefault('prefault_value'),
 })
 
+const TagPriority = z.enum(['low', 'medium', 'high']).describe('TagPriority: priority of a tag')
 const Tag = z
   .object({
     label: z.string(),
     color: z.string().optional(),
+    priority: TagPriority,
   })
   .describe('Tag: a label with optional color')
 const TagArray = z.array(Tag).describe('Tags: a list of tag')
@@ -328,6 +330,16 @@ describe('end-to-end (e2e) schema generation', () => {
       input Tag {
         color: String
         label: String!
+
+        """TagPriority: priority of a tag"""
+        priority: Tag_PriorityEnum_3!
+      }
+
+      """TagPriority: priority of a tag"""
+      enum Tag_PriorityEnum_3 {
+        high
+        low
+        medium
       }
 
       """Task: a unit of work"""

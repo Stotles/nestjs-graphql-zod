@@ -436,5 +436,12 @@ export namespace getFieldInfoFromZod {
  * @__PURE__
  */
 function defaultNestedClassNameProvider(parentName: string, propertyKey: string): string {
-  return `${parentName}_${toTitleCase(propertyKey)}`
+  const titleKey = toTitleCase(propertyKey)
+
+  // Return empty so extractNameAndDescription can derive the name from the
+  // zod schema's .describe() — otherwise the result would be "_", and any
+  // child enums would get a "__" prefix which GraphQL reserves.
+  if (!parentName && !titleKey) return ''
+
+  return `${parentName}_${titleKey}`
 }
