@@ -2,12 +2,14 @@ import { GraphQLScalarType } from 'graphql/type/definition'
 import {
   $ZodArray,
   $ZodBoolean,
+  $ZodCheckNumberFormat,
   $ZodDefault,
   $ZodEnum,
   $ZodLazy,
   $ZodNonOptional,
   $ZodNullable,
   $ZodNumber,
+  $ZodNumberFormat,
   $ZodObject,
   $ZodOptional,
   $ZodPipe,
@@ -222,14 +224,7 @@ function getFieldInfoFromZodInner<T extends $ZodType>(
     }
   }
   if (isZodInstance($ZodNumber, prop)) {
-    // The format produced by `.int()` / `.int32()` / `z.int()` / `z.int32()` is
-    // tracked in the schema's `bag` (populated by the `number_format` check's
-    // `onattach`). Reading `bag.format` here covers both `z.number().int()` —
-    // which stays a plain `$ZodNumber` with a check attached — and `z.int()`
-    // — which is a `$ZodNumberFormat` instance with the same bag entry.
-    const format = prop._zod.bag.format
-    // Purposely not including `uint32` since GraphQL Int type is a signed 32-bit integer
-    const isInt = format === 'safeint' || format === 'int32'
+    const isInt = isIntSchema(prop)
 
     return {
       type: isInt ? Int : Number,
@@ -444,4 +439,26 @@ function defaultNestedClassNameProvider(parentName: string, propertyKey: string)
   if (!parentName && !titleKey) return ''
 
   return `${parentName}_${titleKey}`
+}
+
+/**
+ * Checks whether a number schema has an integer format that maps to GraphQL
+ * `Int` (`safeint` or `int32`).
+ *
+ * `uint32` is purposely excluded: it goes up to 2^32 - 1, while GraphQL `Int` is signed and
+ * stops at 2^31 - 1.
+ *
+ * @param {$ZodNumber} prop The number schema.
+ * @returns {boolean} `true` if the schema should map to GraphQL `Int`.
+ */
+function isIntSchema(prop: $ZodNumber): boolean {
+  const isIntFormat = (format: string | undefined) => format === 'safeint' || format === 'int32'
+
+  // `z.int()` / `z.int32()` etc. are `$ZodNumberFormat` instances with the format in `def.format`.
+  if (isZodInstance($ZodNumberFormat, prop) && isIntFormat(prop._zod.def.format)) return true
+
+  // `z.number().int()` stays a plain `$ZodNumber` with a `number_format` check in `def.checks`.
+  return (prop._zod.def.checks ?? []).some(
+    (check) => check instanceof $ZodCheckNumberFormat && isIntFormat(check._zod.def.format),
+  )
 }

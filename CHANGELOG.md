@@ -4,6 +4,13 @@ This file contains the changes made to the package.
 
 The sections are in descending order of the change date.
 
+## [4.1.4] - 2026-11-05
+
+### Changed
+
+- Integer number schemas (`z.int()`, `z.number().int()`, `z.int32()`) map to GraphQL `Int` again on zod 4.6.0 and later. zod 4.6 stopped setting `_zod.bag.format`, so they were all being mapped to `Float`.
+- Raised the minimum `zod` peer dependency from `4.0` to `4.0.16`. Since 4.1.3, `z.keyof()` in `@ZodArgs` relies on zod returning an enum, which zod only does from 4.0.16 (earlier versions return a union of literals). The test suite now runs against both 4.0.16 and the latest zod.
+
 ## [4.1.3] - 2026-06-19
 
 ### Changed
