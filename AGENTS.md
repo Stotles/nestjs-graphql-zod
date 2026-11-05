@@ -6,14 +6,16 @@ This file provides guidance when working with code in this repository.
 
 `@stotles/nestjs-graphql-zod` is a library that converts Zod v4 schemas into NestJS GraphQL types at runtime. It dynamically generates `@ObjectType`/`@InputType`-decorated classes from Zod schemas, so consumers don't need to maintain separate GraphQL schema classes. Published to npm as `@stotles/nestjs-graphql-zod`.
 
+This repository is public. Don't reference internal Stotles repositories, apps or tickets in commits, PRs, code or comments.
+
 ## Commands
 
 - **Build:** `npm run build` (runs `tsc`)
-- **Test:** `npm test` (runs `vitest run`)
-- **Single test:** `npm test -- tests/helpers/unwrap.test.ts`
+- **Test:** `npm test` (runs `vitest run`, which runs the whole suite once per zod version; see [Testing](#testing))
+- **Single test:** `npm test -- tests/helpers/unwrap.test.ts` (both zod versions); add `--project zod-latest` or `--project zod-min` for one
 - **Test watch:** `npm run test:watch`
 - **Typecheck:** `npm run typecheck` (uses `tests/tsconfig.json` which covers both src and tests)
-- **Lint:** `npm run lint` (oxlint)
+- **Lint:** `npm run lint` (oxlint, with type-aware rules via `oxlint-tsgolint`)
 - **Format:** `npm run fmt` (oxfmt)
 - **Format check:** `npm run fmt:check`
 - **All checks (CI order):** `npm run checks` (fmt:check → build → typecheck → lint)
@@ -54,9 +56,21 @@ This file provides guidance when working with code in this repository.
 
 The library uses `zod/v4/core` imports (not `zod` directly) to work with all Zod v4 variants (classic, mini, core). Schema metadata is read through `globalRegistry` rather than instance properties. The `graphqlTypeInput`/`graphqlTypeOutput` metadata keys serve as escape hatches for schemas the library can't infer (e.g. transforms).
 
+- **Read schema details from `_zod.def`, not `_zod.bag`.** `bag` is an internal cache whose contents change between zod releases (zod 4.6 stopped populating `bag.format`, which turned every integer field into `Float`). Narrow with zod's classes first (e.g. `$ZodNumberFormat`, `$ZodCheckNumberFormat`) so `def` is typed without casts.
+- **Don't use classic-only getters** such as `schema.format` or `schema.description`; they don't exist on zod mini or core schemas.
+- **`instanceof` can give false positives on old zod.** On 4.0.x, `z.number()` can pass as `$ZodNumberFormat`, so check the actual value (e.g. `def.format`) rather than relying on the class alone.
+- **Minimum zod is 4.0.16** (`peerDependencies`). Before 4.0.16, `z.keyof()` returns a union of literals instead of an enum, which `@ZodArgs` doesn't support.
+
 ## Testing
 
 Tests use Vitest with globals enabled. The vitest config forces a `graphql` module alias to avoid dual-instance problems between ESM and CJS builds.
+
+The suite runs against both ends of the supported zod range, via Vitest `projects` in `vitest.config.mts`:
+
+- **`zod-latest`** — the `zod` devDependency.
+- **`zod-min`** — `zod-min` (`npm:zod@4.0.16`), swapped in for `zod` and `zod/*` with `resolve.alias`.
+
+`zod-min` must stay pinned to the minimum in the `zod` peer range; change both together. Its `npm audit` finding is expected, since it's deliberately old.
 
 Tests directly inspect NestJS's internal `TypeMetadataStorage` to verify that generated classes have correct field metadata, nullability, and descriptions. This is the primary assertion pattern — schemas are generated and then their metadata is inspected.
 
@@ -67,6 +81,7 @@ Tests directly inspect NestJS's internal `TypeMetadataStorage` to verify that ge
 - TypeScript 6 with `nodenext` module resolution. The build emits to `dist/`.
 - **Public API surface:** `src/index.ts` re-exports only the public API (all decorators, `getZodObject`/`getZodObjectName`, `modelFromZod`/`modelFromZodBase`/`IModelFromZodOptions`). Everything else under `src/helpers/` is internal — don't assume a helper is importable by consumers just because it's exported from its own module.
 - **Minimum Node is 20.19** (`engines.node`); don't use APIs newer than that. CI tests against Node 20.19, 22, 24, and 26 (see `.github/workflows/ci.yml`).
+- **Held-back devDependencies:** vitest stays on 4 while Node 20 is supported (vitest 5 needs Node 22.12). TypeScript stays on 6 until `@nestjs/graphql` allows 7. `@types/node` tracks the minimum supported Node (`engines.node`, currently 20.19), so newer Node APIs fail to typecheck; raise both together.
 
 ## Releasing
 
@@ -76,4 +91,9 @@ Publishing is automated via `.github/workflows/publish.yml`, which triggers on p
 2. Commit (the convention in history is a message like `Fix … (v4.1.3)`, often via PR).
 3. Tag with a matching `v<version>` tag and push the tag — this triggers the publish workflow.
 
-The tag must match the `package.json` version. Packaging is controlled by `.npmignore`, which ignores everything by default and then allowlists `dist/**`, `CHANGELOG.md`, `LICENSE`, `package.json`, and `README.md`.
+The tag must match the `package.json` version; the publish workflow fails otherwise. Packaging is controlled by `.npmignore`, which ignores everything by default and then allowlists `dist/**`, `CHANGELOG.md`, `LICENSE`, `package.json`, and `README.md`.
+
+## Workflows
+
+- Actions use broad tags (e.g. `actions/checkout@v7`), pinned to exact commits in `.github/workflows/actions.lock`. After changing any `uses:`, run `gh actions-lock --no-narrow` (without `--no-narrow` it rewrites the tags to full versions). `verify-lockfile.yml` checks the lockfile when workflows change.
+- Audit workflows with `zizmor .github/workflows/`. Use zizmor 1.32 or newer; older versions don't understand `actions.lock` and flag every tag as unpinned.
