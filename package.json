@@ -22,7 +22,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "scripts": {
     "fmt": "oxfmt",
@@ -37,17 +38,17 @@
     "checks": "npm run fmt:check && npm run build && npm run typecheck && npm run lint"
   },
   "devDependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/graphql": "^13.0.0",
-    "@types/node": "^24.12.4",
+    "@nestjs/common": "^12.3.3",
+    "@nestjs/graphql": "^14.2.0",
+    "@types/node": "^20.19.0",
     "class-transformer": "^0.5.1",
     "graphql": "^16.12.0",
-    "oxfmt": "^0.49.0",
-    "oxlint": "^1.67.0",
-    "oxlint-tsgolint": "^0.23.0",
+    "oxfmt": "^0.76.0",
+    "oxlint": "^1.91.0",
+    "oxlint-tsgolint": "^7.0.2005",
     "reflect-metadata": "^0.2.0",
     "typescript": "^6.0.0",
-    "vitest": "^4.1.0",
+    "vitest": "^4.1.11",
     "zod": "^4.6.7",
     "zod-min": "npm:zod@4.0.16"
   },
