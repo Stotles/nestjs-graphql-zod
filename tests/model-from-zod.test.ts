@@ -227,7 +227,7 @@ describe('modelFromZod', () => {
           return z.array(z.lazy(() => Self))
         },
       })
-      .describe('Self: a recursive node') as z.ZodType<SelfType>
+      .describe('Self: a recursive node')
 
     // Verify these are empty to start with so we can verify the test worked.
     expect(_getModelFromZodDepth()).toBe(0)

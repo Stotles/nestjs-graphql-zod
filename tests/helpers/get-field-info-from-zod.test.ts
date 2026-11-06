@@ -189,6 +189,8 @@ describe('getFieldInfoFromZod', () => {
       describe('zod v4 number formats', () => {
         const cases: Array<[string, () => any, any]> = [
           ['int', () => z.int(), Int],
+          ['number().int', () => z.number().int(), Int],
+          ['number().int().min(0).optional', () => z.number().int().min(0).optional(), Int],
           ['int32', () => z.int32(), Int],
           ['uint32', () => z.uint32(), Number], // GraphQL Int is signed, so should not use Int here
           ['float32', () => z.float32(), Number],
@@ -201,6 +203,13 @@ describe('getFieldInfoFromZod', () => {
             expect(info.type).toBe(expected)
           })
         }
+
+        it('should not map a string with an int check to Int', () => {
+          // @ts-expect-error zod's types reject a number check on a string, but it works at runtime.
+          const schema = z.string().check(z.int())
+          const info = getFieldInfoFromZod('field', schema, defaultOptions, direction)
+          expect(info.type).toBe(String)
+        })
       })
 
       describe('zod v4 wrappers', () => {

@@ -12,6 +12,21 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    // Run the whole suite against both ends of the supported zod range: the
+    // `zod` devDependency (latest) and `zod-min` (the minimum in the `zod`
+    // peerDependency range).
+    projects: [
+      { extends: true, test: { name: 'zod-latest' } },
+      {
+        extends: true,
+        test: { name: 'zod-min' },
+        resolve: {
+          // Rewrite `zod` and `zod/*` (e.g. `zod/v4/core`) to the aliased
+          // package, keeping its `exports` map in charge of subpaths.
+          alias: [{ find: /^zod(\/.*)?$/, replacement: 'zod-min$1' }],
+        },
+      },
+    ],
   },
   // graphql ships both CJS (index.js) and ESM (index.mjs) entry points.
   // Vitest's resolver picks the ESM build for our test files while the CJS

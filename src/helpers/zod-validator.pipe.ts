@@ -31,7 +31,7 @@ export class ZodValidatorPipe<T extends $ZodType> implements PipeTransform {
     } catch (error_) {
       const error = error_ as $ZodError
 
-      const message = error.issues.map((issue) => {
+      const message = error.issues.map((issue): ValidationError => {
         const property = issue.path.length ? String(issue.path[0]) : ''
 
         const targetValue = issue.path.reduce<unknown>((prev, curr) => {
@@ -61,7 +61,7 @@ export class ZodValidatorPipe<T extends $ZodType> implements PipeTransform {
           constraints: {
             [issue.code]: issue.message,
           },
-        } as ValidationError
+        }
       })
 
       throw new BadRequestException(message, 'Validation Exception')
