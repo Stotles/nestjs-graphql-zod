@@ -72,28 +72,29 @@ The suite runs against both ends of the supported zod range, via Vitest `project
 
 `zod-min` must stay pinned to the minimum in the `zod` peer range; change both together. Its `npm audit` finding is expected, since it's deliberately old.
 
-Tests directly inspect NestJS's internal `TypeMetadataStorage` to verify that generated classes have correct field metadata, nullability, and descriptions. This is the primary assertion pattern — schemas are generated and then their metadata is inspected.
+Most tests assert on helper output (e.g. `getFieldInfoFromZod` in `tests/helpers/get-field-info-from-zod.test.ts`), and `tests/schema-generation.test.ts` checks the generated schema end to end with `printSchema`. Prefer those over NestJS internals such as `TypeMetadataStorage`, which is imported from `@nestjs/graphql/dist/...` and can move between versions.
 
 ## Key conventions
 
 - The `name:description` format in `.describe()` strings (e.g. `'UserModel: A user'`) splits into a GraphQL class name and description.
 - Recursion depth is capped at `MAX_ZOD_DEPTH` (from `src/helpers/constants.ts`) in multiple places to guard against infinite loops from `z.lazy()` chains.
 - TypeScript 6 with `nodenext` module resolution. The build emits to `dist/`.
-- **Public API surface:** `src/index.ts` re-exports only the public API (all decorators, `getZodObject`/`getZodObjectName`, `modelFromZod`/`modelFromZodBase`/`IModelFromZodOptions`). Everything else under `src/helpers/` is internal — don't assume a helper is importable by consumers just because it's exported from its own module.
+- **Public API surface:** `src/index.ts` re-exports only the public API: all decorators, `inputFromZod`, `setDefaultTypeProvider`/`setDefaultEnumProvider`, `getZodObject`/`getZodObjectName`, and `modelFromZod`/`modelFromZodBase`/`IModelFromZodOptions`. Treat changes to any of these as public API changes. Everything else under `src/helpers/` is internal — don't assume a helper is importable by consumers just because it's exported from its own module.
 - **Minimum Node is 20.19** (`engines.node`); don't use APIs newer than that. CI tests against Node 20.19, 22, 24, and 26 (see `.github/workflows/ci.yml`).
-- **Held-back devDependencies:** vitest stays on 4 while Node 20 is supported (vitest 5 needs Node 22.12). TypeScript stays on 6 until `@nestjs/graphql` allows 7. `@types/node` tracks the minimum supported Node (`engines.node`, currently 20.19), so newer Node APIs fail to typecheck; raise both together.
+- **Held-back devDependencies:** vitest stays on 4 while Node 20 is supported (vitest 5 needs Node 22.12). TypeScript stays on 6 until `@nestjs/graphql` allows 7. graphql stays on 16 because 17 needs test-config changes for its new builds. `@types/node` tracks the minimum supported Node (`engines.node`, currently 20.19), so newer Node APIs fail to typecheck; raise both together.
 
 ## Releasing
 
 Publishing is automated via `.github/workflows/publish.yml`, which triggers on pushing a `v*` git tag and runs `npm stage publish` (staged publish, using OIDC — no npm token). To cut a release:
 
 1. Bump `version` in `package.json`.
-2. Commit (the convention in history is a message like `Fix … (v4.1.3)`, often via PR).
-3. Tag with a matching `v<version>` tag and push the tag — this triggers the publish workflow.
+2. Add a `## [<version>] - <YYYY-MM-DD>` section to `CHANGELOG.md`.
+3. Open a PR with these changes and squash-merge it. All changes go in this way, so the PR title becomes the commit message on `master`; for releases the convention is a title like `Fix … (v4.1.3)`.
+4. Tag the squashed commit on `master` with a matching `v<version>` tag and push the tag — this triggers the publish workflow.
 
 The tag must match the `package.json` version; the publish workflow fails otherwise. Packaging is controlled by `.npmignore`, which ignores everything by default and then allowlists `dist/**`, `CHANGELOG.md`, `LICENSE`, `package.json`, and `README.md`.
 
 ## Workflows
 
-- Actions use broad tags (e.g. `actions/checkout@v7`), pinned to exact commits in `.github/workflows/actions.lock`. After changing any `uses:`, run `gh actions-lock --no-narrow` (without `--no-narrow` it rewrites the tags to full versions). `verify-lockfile.yml` checks the lockfile when workflows change.
+- Actions are pinned to exact tags (e.g. `actions/checkout@v7.0.1`) and to commits in `.github/workflows/actions.lock`. After changing any `uses:`, run `gh actions-lock` (it narrows a broad ref like `@v7` to the latest exact tag; don't pass `--no-narrow`). `verify-lockfile.yml` runs `gh actions-lock --verify` on every PR.
 - Audit workflows with `zizmor .github/workflows/`. Use zizmor 1.32 or newer; older versions don't understand `actions.lock` and flag every tag as unpinned.
