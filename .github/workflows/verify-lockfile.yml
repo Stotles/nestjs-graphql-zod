@@ -3,10 +3,8 @@ name: Verify actions lockfile
 on:
   push:
     branches: [master]
-    paths: ['.github/workflows/**']
   pull_request:
     branches: [master]
-    paths: ['.github/workflows/**']
 
 permissions:
   contents: read # check out the repository
@@ -21,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
